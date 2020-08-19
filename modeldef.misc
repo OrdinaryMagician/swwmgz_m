@@ -43,18 +43,6 @@ Model "ReflectedBullet"
 	FrameIndex XZW1 A 0 0
 }
 
-Model "FroggyChair"
-{
-	Path "models"
-
-	Model 0 "ASmallPriceToPay_d.3d"
-	Skin 0 "ASmallPriceToPay.png"
-	Scale 0.14 0.14 0.18
-	AngleOffset -90
-
-	FrameIndex XZW1 A 0 0
-}
-
 Model "mkBloodDrop"
 {
 	Path "models/extra"

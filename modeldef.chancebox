@@ -1,0 +1,53 @@
+Model "Chancebox"
+{
+	Path "models"
+	Model 0 "Chancebox_d.3d"
+	Skin 0 "Chancebox.png"
+	Scale 0.25 0.25 0.25
+	AngleOffset -90
+	ZOffset 16
+	USEACTORPITCH
+	USEACTORROLL
+
+	FrameIndex XZW1 A 0 0
+	// deploy
+	FrameIndex XZW2 A 0 8
+	FrameIndex XZW2 B 0 9
+	FrameIndex XZW2 C 0 10
+	FrameIndex XZW2 D 0 11
+	FrameIndex XZW2 E 0 12
+	FrameIndex XZW2 F 0 13
+	FrameIndex XZW2 G 0 14
+	FrameIndex XZW2 H 0 15
+	FrameIndex XZW2 I 0 16
+	FrameIndex XZW2 J 0 17
+	FrameIndex XZW2 K 0 18
+	FrameIndex XZW2 L 0 19
+	FrameIndex XZW2 M 0 20
+	FrameIndex XZW2 N 0 21
+	FrameIndex XZW2 O 0 22
+	FrameIndex XZW2 P 0 23
+	FrameIndex XZW2 Q 0 24
+}
+Model "ChanceboxTop"
+{
+	Path "models"
+	Model 0 "Chancebox_Top_d.3d"
+	Skin 0 "Chancebox.png"
+	Scale 0.25 0.25 0.25
+	AngleOffset -90
+	ZOffset 4
+
+	FrameIndex XZW1 A 0 0
+}
+Model "ChanceboxSide"
+{
+	Path "models"
+	Model 0 "Chancebox_Side_d.3d"
+	Skin 0 "Chancebox.png"
+	Scale 0.25 0.25 0.25
+	AngleOffset -90
+	ZOffset 16
+
+	FrameIndex XZW1 A 0 0
+}

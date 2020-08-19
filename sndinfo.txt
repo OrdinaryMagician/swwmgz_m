@@ -936,6 +936,11 @@ $limit moth/fly 30
 
 fabricator/use	sounds/items/makeammo.ogg
 
+chancebox/explode1	sounds/items/lootexpl1.ogg
+chancebox/explode2	sounds/items/lootexpl2.ogg
+chancebox/explode3	sounds/items/lootexpl3.ogg
+$random chancebox/explode { chancebox/explode1 chancebox/explode2 chancebox/explode3 }
+
 menu/activate	sounds/hmenu/hmenu1.ogg
 menu/backup	sounds/hmenu/hmenu2.ogg
 menu/prompt	sounds/hmenu/hmenu1.ogg

@@ -82,7 +82,6 @@ be purchased from the store, they have to be found in maps.
   Item          | Price
   ------------- | -----
   Health Nugget	| 1200
-  Froggy Chair	| 1440
   H.Tetrahedron	| 3000
   H.Cube	| 8000
   Refresher	| 160000
@@ -102,3 +101,49 @@ be purchased from the store, they have to be found in maps.
   T2 Fabricator	| 12000
   T3 Fabricator	| 150000
   T4 Fabricator	| 1920000
+
+#### Collectables
+
+Items that can sometimes be found in special boxes hidden in secret rooms. When
+collected they give credits according to their price.
+
+  Item          | Price
+  ------------- | -----
+  Nutatco Bar	| 200
+  Frispy Corn	| 500
+  Hoagie	| 800
+  PISS Whiskey	| 1200
+  Froggy Chair	| 1440
+  Cat C. Poster	| 1500
+  MMiaSR Vol.1	| 2000
+  MMiaSR Vol.2	| 2000
+  MMiaSR Vol.3	| 2000
+  Akari Proj.	| 3000
+  Lithium Vol.1	| 3500
+  Love Signals	| 4000
+  Mashiro Plush	| 5000
+  BRC Debut LP	| 6000
+  Hege Cactus	| 8000
+  Raidemin Fig.	| 9000
+
+The following unlock when playing Heretic and up.
+
+  Item          | Price
+  ------------- | -----
+  Quartz Flask	| 4000
+  Demo Plush	| 6400
+  Doomguy Fig.	| 9000
+  Firemace	| 10000
+  Saya Bean	| 12000
+  Tome of Power	| 16000
+
+The following unlock when playing Hexen and up.
+
+  Item          | Price
+  ------------- | -----
+  Peach Juice	| 400
+  Milk Breads	| 900
+  Kirin Manga	| 1600
+  Puzzle Book	| 2500
+  Kirin Plush	| 10000
+  Obelisk	| 24000

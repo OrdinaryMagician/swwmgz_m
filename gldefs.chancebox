@@ -1,0 +1,20 @@
+HardwareShader Texture "models/Chancebox.png"
+{
+	Shader "shaders/glsl/Shinemask_bright.fp"
+	Texture "masktex" "models/Chancebox_mask.png"
+	Texture "envtex" "models/silvermap.png"
+	Texture "brighttex" "models/Chancebox_bright.png"
+}
+
+PointLight CHANCELIGHT
+{
+	Color 1.0 0.7 0.2
+	Size 50
+	Offset 0 16 0
+	Attenuate 1
+}
+
+Object Chancebox
+{
+	Frame "XZW2" { light "CHANCELIGHT" }
+}

@@ -113,6 +113,7 @@ SWWM_FTITLE = "Opciones Divertidas";
 SWWM_FUNTAGS = "Renombrar Monstruos";
 SWWM_SIMPLEFOG = "Efecto de Teletransporte Simple"
 SWWM_BIGTAGS = "Usar Fuente Grande para Nombres";
+SWWM_INTERMUSIC = "Usar Música de Intermisión Original";
 TOOLTIP_SWWM_VOICETYPE = "Selecciona el pack de voz para el jugador.";
 TOOLTIP_SWWM_MUTEVOICE = "Controla lo que se mutea, si prefieres tener un protagonista más silencioso.";
 TOOLTIP_SWWM_FLASHSTRENGTH = "Los destellos en pantalla suelen ocurrir al disparar algunas armas, puedes reducirlo si este tipo de effectos te causan malestar.";
@@ -171,6 +172,7 @@ TOOLTIP_SWWM_MENUPAUSE = "En modo de un jugador, el Menú de Demolicionista por 
 TOOLTIP_SWWM_FUNTAGS = "Reemplaza los nombres de monstruos vanilla por alternativas graciosas.";
 TOOLTIP_SWWM_SIMPLEFOG = "Reemplaza los efectos de teletransporte basados en partículas con simples sprites. Útil si causan problemas de rendimiento.";
 TOOLTIP_SWWM_BIGTAGS = "Por defecto los nombres de las barras de vida usan una fuente pequeña. Activando esta opción, se cambiará por una mayor.";
+TOOLTIP_SWWM_INTERMUSIC = "Al activar, las pantallas de intermisión usan la música original del IWAD o pack de mapas usado.";
 // knowledge base
 SWWM_COMINGSOON = "(próximamente)";
 SWWM_MISSTAB = "Misión";
@@ -216,6 +218,7 @@ SWWM_NOSTORE = "(no queda nada que comprar)";
 SWWM_GAMETAB = "Juegos";
 SWWM_TRADETAB = "Intercambio";
 SWWM_TRADEFULL = "No puede llevar más de eso";
+SWWM_TRADEFAIL = "No puedes enviar este item";
 SWWM_NOTRADE = "(no hay unidades con las que intercambiar)";
 SWWM_TRADETO = "Enviado a";
 SWWM_TRADEFROM = "Recibido de";
@@ -245,6 +248,12 @@ SWWM_HELPTXT =
 "\n"
 "\cfArriba/Abajo:\c- Scroll\n"
 "\n"
+"\cxPestaña de Stats - Controles\c-\n"
+"\cx---------------------------\c-\n"
+"\n"
+"\cfArriba/Abajo:\c- Scroll\n"
+"\cfIzquierda/Derecha:\c- Cambiar sección\n"
+"\n"
 "\cxPestaña de Inventario - Controles\c-\n"
 "\cx-------------------------------\c-\n"
 "\n"
@@ -261,7 +270,7 @@ SWWM_HELPTXT =
 "\cx-------------------------------------------\c-\n"
 "\n"
 "\cfArriba/Abajo:\c- Scroll por entradas\n"
-"\cfLeft/Right:\c- Cambiar categoría\n"
+"\cfIzquierda/Derecha:\c- Cambiar categoría\n"
 "\cfEnter/Click Izdo.:\c- Abrir entrada\n"
 "\n"
 "\cxPestaña de Biblioteca - Controles (Entrada Abierta)\c-\n"

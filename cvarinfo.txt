@@ -75,3 +75,4 @@ user bool swwm_funtags = true;			// replace vanilla monster names with silly one
 //server bool swwm_partytime = false;		// TODO killed enemies burst into confetti
 server bool swwm_simplefog = false;		// simplified teleport fogs (useful to speed up slaughterwads)
 user bool swwm_bigtags = false;			// use a bigger font for targeter tags
+user bool swwm_intermusic = false;		// use original intermission music

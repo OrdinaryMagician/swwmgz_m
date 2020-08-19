@@ -26,6 +26,7 @@ Extra things for later:
  - Japanese localization
  - Mod trailer video
  - Rewrite the entire Demolitionist Menu code from the ground up to be more easily extensible and adapt to any window size
+ - Separate Demolitionist models for each weapon (will include DLC weapons too in the future)
 
 Very extra things for the future:
  - DLC

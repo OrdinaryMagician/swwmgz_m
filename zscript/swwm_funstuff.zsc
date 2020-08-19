@@ -2,23 +2,62 @@
 
 Class SWWMCollectable : Inventory abstract
 {
+	int avail;
+
+	Property Availability : avail;
+
+	// minimum gametype requirements
+	enum EAvailability
+	{
+		AVAIL_Strife = GAME_Strife,
+		AVAIL_Hexen = AVAIL_Strife|GAME_Hexen,
+		AVAIL_Heretic = AVAIL_Hexen|GAME_Heretic,
+		AVAIL_All = AVAIL_Heretic|GAME_DoomChex
+	};
+
+	Default
+	{
+		Inventory.PickupSound "menu/buyinv";
+		Inventory.Amount 1;
+		Inventory.MaxAmount 1;
+		SWWMCollectable.Availability AVAIL_All;
+		+INVENTORY.UNTOSSABLE;
+		+INVENTORY.UNDROPPABLE;
+		+INVENTORY.UNCLEARABLE;
+		+FLOATBOB;
+		FloatBobStrength 0.25;
+	}
+	override string PickupMessage()
+	{
+		return StringTable.Localize(PickupMsg)..String.Format(" \cj(\cg¥\cf%d\cj)\c-",Stamina);
+	}
+	override void AttachToOwner( Actor other )
+	{
+		Super.AttachToOwner(other);
+		// give credit
+		if ( other.player )
+		{
+			SWWMScoreObj.Spawn(Stamina,other.Vec3Offset(FRandom[ScoreBits](-8,8),FRandom[ScoreBits](-8,8),FRandom[ScoreBits](-8,8)+other.Height/2),Font.CR_GOLD);
+			SWWMCredits.Give(other.player,Stamina);
+		}
+	}
+	States
+	{
+	Spawn:
+		XZW1 A -1;
+		Stop;
+	}
 }
 
 // April Fools 2020
-Class FroggyChair : Inventory
+Class FroggyChair : SWWMCollectable
 {
 	int cdown;
 
 	Default
 	{
 		Tag "$T_FROGGY";
-		Inventory.PickupSound "misc/p_pkup";
 		Inventory.PickupMessage "$T_FROGGY";
-		Inventory.Amount 1;
-		Inventory.MaxAmount 1;
-		+INVENTORY.UNTOSSABLE;
-		+INVENTORY.UNDROPPABLE;
-		+INVENTORY.UNCLEARABLE;
 		Stamina 1440;
 	}
 	override void AttachToOwner( Actor other )
@@ -38,10 +77,444 @@ Class FroggyChair : Inventory
 		}
 		if ( cdown > 0 ) cdown--;
 	}
+}
+
+// The other collectables, which will be implemented eventually
+/*
+Class MMiaSRVol1 : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_SEXROBOT1";
+		Inventory.PickupMessage "$T_SEXROBOT1";
+		Stamina 2000;
+	}
+}
+Class MMiaSRVol2 : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_SEXROBOT2";
+		Inventory.PickupMessage "$T_SEXROBOT2";
+		Stamina 2000;
+	}
+}
+Class MMiaSRVol3 : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_SEXROBOT3";
+		Inventory.PickupMessage "$T_SEXROBOT3";
+		Stamina 2000;
+	}
+}
+Class MothPlushy : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_MOTHPLUSH";
+		Inventory.PickupMessage "$T_MOTHPLUSH";
+		Stamina 5000;
+	}
+}
+Class BRCDebutLP : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_BLACKRATS";
+		Inventory.PickupMessage "$T_BLACKRATS";
+		Stamina 6000;
+	}
+}
+Class AkariProject : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_AKARIPROJECT";
+		Inventory.PickupMessage "$T_AKARIPROJECT";
+		Stamina 3000;
+	}
+}
+Class CatCatcherPoster : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_CATCATCHER";
+		Inventory.PickupMessage "$T_CATCATCHER";
+		Stamina 1500;
+	}
+}
+Class LoveSignalsCD : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_LOVESIGNALS";
+		Inventory.PickupMessage "$T_LOVESIGNALS";
+		Stamina 4000;
+	}
+}
+Class NutatcoBar : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_NUTATCO";
+		Inventory.PickupMessage "$T_NUTATCO";
+		Stamina 200;
+	}
+}
+Class HegeCactus : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_HEGE";
+		Inventory.PickupMessage "$T_HEGE";
+		Stamina 8000;
+	}
+}
+Class RaideminFig : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_RAIDEMIN";
+		Inventory.PickupMessage "$T_RAIDEMIN";
+		Stamina 9000;
+	}
+}
+Class FrispyCorn : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_FRISPYCORN";
+		Inventory.PickupMessage "$T_FRISPYCORN";
+		Stamina 500;
+	}
+}
+Class Hoagie : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_HOAGIE";
+		Inventory.PickupMessage "$T_HOAGIE";
+		Stamina 800;
+	}
+}
+Class LithiumVol1 : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_LITHIUM";
+		Inventory.PickupMessage "$T_LITHIUM";
+		Stamina 3500;
+	}
+}
+Class MeetTheSniper : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_PISS";
+		Inventory.PickupMessage "$T_PISS";
+		Stamina 1200;
+	}
+}
+// Heretic
+Class DemoPlush : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_DEMOPLUSH";
+		Inventory.PickupMessage "$T_DEMOPLUSH";
+		SWWMCollectable.Availability AVAIL_Heretic;
+		Stamina 6400;
+	}
+}
+Class Firemace : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_FIREMACE";
+		Inventory.PickupMessage "$T_FIREMACE";
+		SWWMCollectable.Availability AVAIL_Heretic;
+		Stamina 10000;
+	}
+}
+Class DoomguyFig : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_DOOMFIG";
+		Inventory.PickupMessage "$T_DOOMFIG";
+		SWWMCollectable.Availability AVAIL_Heretic;
+		Stamina 9000;
+	}
+}
+Class TomeOfPower : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_TOMEPOWER";
+		Inventory.PickupMessage "$T_TOMEPOWER";
+		SWWMCollectable.Availability AVAIL_Heretic;
+		Stamina 16000;
+	}
+}
+Class QuartzFlask : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_YEFLASK";
+		Inventory.PickupMessage "$T_YEFLASK";
+		SWWMCollectable.Availability AVAIL_Heretic;
+		Stamina 4000;
+	}
+}
+Class SayaBean : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_SAYABEAN";
+		Inventory.PickupMessage "$T_SAYABEAN";
+		SWWMCollectable.Availability AVAIL_Heretic;
+		Stamina 12000;
+	}
+}
+// Hexen
+Class PuzzleDesignBook : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_PUZZLEBOOK";
+		Inventory.PickupMessage "$T_PUZZLEBOOK";
+		SWWMCollectable.Availability AVAIL_Hexen;
+		Stamina 2500;
+	}
+}
+Class KirinCummies : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_PEACH";
+		Inventory.PickupMessage "$T_PEACH";
+		SWWMCollectable.Availability AVAIL_Hexen;
+		Stamina 400;
+	}
+}
+Class MilkBreads : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_MILKBREAD";
+		Inventory.PickupMessage "$T_MILKBREAD";
+		SWWMCollectable.Availability AVAIL_Hexen;
+		Stamina 900;
+	}
+}
+Class EyeObelisk : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_OBELISK";
+		Inventory.PickupMessage "$T_OBELISK";
+		SWWMCollectable.Availability AVAIL_Hexen;
+		Stamina 24000;
+	}
+}
+Class KirinManga : SWWMCollectable
+{
+	Default
+	{
+		Tag "$T_KIRINMANGA";
+		Inventory.PickupMessage "$T_KIRINMANGA";
+		SWWMCollectable.Availability AVAIL_Hexen;
+		Stamina 1600;
+	}
+}
+*/
+
+// Collectable box (recycling of discarded "chance box" item)
+Class Chancebox : Actor
+{
+	static void SpawnChanceboxes()
+	{
+		// TODO the whole damn deal of finding secret sectors and whatnot
+		// this will be huge, and get called from the event handler on first level load
+	}
+
+	action void A_DropSomething()
+	{
+		Array<Class <SWWMCollectable> > candidates;
+		candidates.Clear();
+		for ( int i=0; i<AllActorClasses.Size(); i++ )
+		{
+			let c = (Class<SWWMCollectable>)(AllActorClasses[i]);
+			if ( !c || (c == 'SWWMCollectable') ) continue;
+			let def = GetDefaultByType(c);
+			// check that we can collect it in this IWAD
+			if ( !(gameinfo.gametype&def.avail) ) continue;
+			candidates.Push(c);
+		}
+		let ti = ThinkerIterator.Create("SWWMCollectable");
+		SWWMCollectable c;
+		while ( c = SWWMCollectable(ti.Next()) )
+		{
+			int f = candidates.Find(inv.GetClass());
+			if ( f < candidates.Size() )
+				candidates.Delete(f);
+		}
+		if ( candidates.Size() <= 0 )
+		{
+			// TODO no candidates? just spawn some random loot
+			Console.Printf("\cg// TODO spawn random loot\c-");
+		}
+		else
+		{
+			// pop one at random
+			let a = Spawn(candidates[Random[Chancebox](0,candidates.Size()-1)],pos);
+			a.bDROPPED = true;
+			a.bNOGRAVITY = false;
+			a.vel.z = FRandom[Chancebox](2,4);
+		}
+		int numpt = Random[ExploS](16,32);
+		for ( int i=0; i<numpt; i++ )
+		{
+			Vector3 pvel = (FRandom[ExploS](-1,1),FRandom[ExploS](-1,1),FRandom[ExploS](-1,1)).unit()*FRandom[ExploS](.3,8);
+			let s = Spawn("SWWMHalfSmoke",Vec3Offset(0,0,16));
+			s.vel = pvel;
+			s.SetShade(Color(2,1,3)*Random[ExploS](64,85));
+			s.special1 = Random[ExploS](1,4);
+			s.alpha *= .4;
+			s.scale *= 2.4;
+		}
+	}
+	action void A_Confetti()
+	{
+		A_StartSound("misc/tada",CHAN_ITEM);
+		double ang, pt;
+		int numpt = Random[ExploS](64,128);
+		for ( int i=0; i<numpt; i++ )
+		{
+			ang = FRandom[ExploS](0,360);
+			pt = FRandom[ExploS](-90,30);
+			let c = Spawn("FancyConfetti",Vec3Offset(0,0,16));
+			c.vel = (cos(pt)*cos(ang),cos(pt)*sin(ang),-sin(pt))*FRandom[ExploS](2,8);
+		}
+	}
+	override bool Used( Actor user )
+	{
+		if ( CurState != FindState("Spawn") ) return false;
+		SetStateLabel("Active");
+		return true;
+	}
+	Default
+	{
+		Radius 16;
+		Height 32;
+		+MOVEWITHSECTOR;
+		+ROLLSPRITE;
+	}
 	States
 	{
 	Spawn:
 		XZW1 A -1;
+		Stop;
+	Active:
+		XZW1 A 1
+		{
+			specialf1 = angle;
+			A_StartSound("misc/drumroll",CHAN_WEAPON);
+		}
+		XZW1 A 1
+		{
+			angle = specialf1+FRandom[Chancebox](-5,5);
+			pitch = FRandom[Chancebox](-5,5);
+			roll = FRandom[Chancebox](-5,5);
+			special1++;
+			return A_JumpIf(special1>40,"BlowUp");
+		}
+		Wait;
+	BlowUp:
+		XZW2 A 1
+		{
+			A_SetSize(16,4);
+			A_QuakeEx(2,2,2,9,0,500,"",QF_RELATIVE|QF_SCALEDOWN,falloff:200,rollIntensity:.2);
+			A_StartSound("chancebox/explode",CHAN_VOICE);
+			angle = specialf1;
+			pitch = roll = 0;
+			let t = Spawn("ChanceboxTop",Vec3Offset(0,0,32));
+			t.angle = angle;
+			let s1 = Spawn("ChanceboxSide",level.Vec3Offset(pos,(RotateVector((16,0),angle+90),0)));
+			s1.angle = angle+90;
+			let s2 = Spawn("ChanceboxSide",level.Vec3Offset(pos,(RotateVector((16,0),angle-90),0)));
+			s2.angle = angle-90;
+			A_DropSomething();
+		}
+		XZW2 BCDEFGHIJKLMNO 1;
+		XZW2 P -1 A_Confetti();
+		Stop;
+	}
+}
+
+// top side of chancebox, shoots upwards
+Class ChanceboxTop : Actor
+{
+	Default
+	{
+		Radius 16;
+		Height 4;
+		PROJECTILE;
+	}
+	override void PostBeginPlay()
+	{
+		Super.PostBeginPlay();
+		vel = (0,0,20);
+	}
+	States
+	{
+	Spawn:
+		XZW1 A 1
+		{
+			double magvel = vel.length();
+			if ( magvel > 0. )
+			{
+				magvel = min(60,magvel*1.2);
+				vel = vel.unit()*magvel;
+			}
+		}
+		Wait;
+	Death:
+		TNT1 A 1 A_SpawnItemEx("ExplodiumBulletImpact");
+		Stop;
+	}
+}
+
+// left/right side of chancebox, shoots forward
+Class ChanceboxSide : Actor
+{
+	Default
+	{
+		Radius 16;
+		Height 32;
+		PROJECTILE;
+	}
+	override void PostBeginPlay()
+	{
+		Super.PostBeginPlay();
+		vel = (cos(angle)*cos(pitch),sin(angle)*cos(pitch),-sin(pitch))*20;
+	}
+	States
+	{
+	Spawn:
+		XZW1 A 1
+		{
+			double magvel = vel.length();
+			if ( magvel > 0. )
+			{
+				magvel = min(60,magvel*1.2);
+				vel = vel.unit()*magvel;
+			}
+		}
+		Wait;
+	Death:
+		TNT1 A 1 A_SpawnItemEx("ExplodiumBulletImpact");
 		Stop;
 	}
 }

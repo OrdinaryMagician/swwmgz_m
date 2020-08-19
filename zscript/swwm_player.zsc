@@ -54,7 +54,6 @@ Class Demolitionist : PlayerPawn
 
 	SWWMItemSense itemsense;
 	int itemsense_cnt;
-	int lastsense;
 
 	Default
 	{
@@ -224,7 +223,7 @@ Class Demolitionist : PlayerPawn
 			{
 				let type = (class<Inventory>)(AllActorClasses[i]);
 				if ( !type ) continue;
-				if ( !(gameinfo.gametype&GAME_Hexen) && (type is 'AmmoFabricator') ) continue;	// no fabricators outside of hexen
+				if ( !(gameinfo.gametype&(GAME_Hexen|GAME_Strife)) && (type is 'AmmoFabricator') ) continue;	// no fabricators before hexen
 				let def = GetDefaultByType (type);
 				if ( def.Icon.isValid() &&
 					!(type is "PuzzleItem") && !(type is "Powerup") && !(type is "Ammo") &&	!(type is "Armor") && !(type is "Key") )
@@ -343,9 +342,6 @@ Class Demolitionist : PlayerPawn
 	}
 	void SenseItems()
 	{
-		if ( level.maptime < lastsense+5 )
-			return;
-		lastsense = level.maptime;
 		let thesight = FindInventory("Omnisight");
 		let bt = BlockThingsIterator.Create(self,1200);
 		while ( bt.Next() )
@@ -656,7 +652,7 @@ Class Demolitionist : PlayerPawn
 				A_QuakeEx(4,4,4,10,0,128,"",QF_RELATIVE|QF_SCALEDOWN);
 				A_StartSound("demolitionist/bump",CHAN_DAMAGE,CHANF_OVERLAP);
 				a.A_StartSound("demolitionist/bump",CHAN_DAMAGE,CHANF_OVERLAP);
-				bumptic = gametic+int(5+spd/4.);
+				bumptic = gametic+int(20+spd/4.);
 				if ( (diff.z < a.height) && (lastvelz >= -25) && (a.bDONTTHRUST || (a.Mass >= Mass*1.5)) )
 				{
 					if ( bumped ) continue;

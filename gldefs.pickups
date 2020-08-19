@@ -175,8 +175,8 @@ Object Ragekit
 FlickerLight2 LAMPLIGHT
 {
 	Color 0.6 1.0 0.7
-	Size 240
-	SecondarySize 248
+	Size 350
+	SecondarySize 358
 	Interval 0.1
 	Offset 0 8 0
 	Attenuate 1

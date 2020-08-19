@@ -42,7 +42,7 @@ Class SWWMKnowledgeBaseMenu : GenericMenu
 	TextureID MainWindow, TabSeparator, WindowSeparator, WindowSeparatorH,
 		FancyBg, EasterEgg, LoreSeparator, LoreSeparatorW;
 	transient CVar lang, fuzz, pauseme;
-	transient Font TewiFont, MPlusFont;
+	transient Font TewiFont, MPlusFont, MiniwiFont, k6x8Font;
 	int curtab, oldtab;
 	// for scrolling
 	bool sub;
@@ -90,7 +90,7 @@ Class SWWMKnowledgeBaseMenu : GenericMenu
 	Font LangFont( Font req )
 	{
 		if ( !lang ) lang = CVar.GetCVar('language',players[consoleplayer]);
-		if ( lang.GetString() ~== "jp" ) return MPlusFont;
+		if ( lang.GetString() ~== "jp" ) return (req==MiniwiFont)?k6x8Font:MPlusFont;
 		return req;
 	}
 
@@ -112,6 +112,8 @@ Class SWWMKnowledgeBaseMenu : GenericMenu
 		}
 		TewiFont = Font.GetFont('TewiShaded');
 		MPlusFont = Font.GetFont('MPlusShaded');
+		MiniwiFont = Font.GetFont('MiniwiShaded');
+		k6x8Font = Font.GetFont('k6x8Shaded');
 		FancyBg = TexMan.CheckForTexture("graphics/tempbg.png",TexMan.Type_MiscPatch);
 		MainWindow = TexMan.CheckForTexture("graphics/KBase/MainWindow.png",TexMan.Type_MiscPatch);
 		TabSeparator = TexMan.CheckForTexture("graphics/KBase/TabSeparator.png",TexMan.Type_MiscPatch);
@@ -546,7 +548,7 @@ Class SWWMKnowledgeBaseMenu : GenericMenu
 				MenuSound("menu/demoscroll");
 				ofs0 = sel0 = 0;
 				ofs1 = ++sel1;
-				if ( ofs1 > STAT_LEVEL ) ofs1 = sel1 = STAT_MAIN;
+				if ( ofs1 > STAT_ACHIEVEMENT ) ofs1 = sel1 = STAT_MAIN;
 				CVar.GetCVar('swwm_laststattab',players[consoleplayer]).SetInt(sel1);
 			}
 			return true;
@@ -580,7 +582,7 @@ Class SWWMKnowledgeBaseMenu : GenericMenu
 				MenuSound("menu/demoscroll");
 				ofs0 = sel0 = 0;
 				ofs1 = --sel1;
-				if ( ofs1 < STAT_MAIN ) ofs1 = sel1 = STAT_LEVEL;
+				if ( ofs1 < STAT_MAIN ) ofs1 = sel1 = STAT_ACHIEVEMENT;
 				CVar.GetCVar('swwm_laststattab',players[consoleplayer]).SetInt(sel1);
 			}
 			return true;
@@ -588,7 +590,9 @@ Class SWWMKnowledgeBaseMenu : GenericMenu
 			if ( (curtab == TAB_INVENTORY) && (invlist.Size() > 0) && (sel0 < invlist.Size()) )
 			{
 				// can't use this
-				if ( invlist[sel0] is 'Ammo' ) return true;
+				if ( (invlist[sel0] is 'Ammo') || (invlist[sel0] is 'MagAmmo') || (invlist[sel0] is 'SWWMCollectable')
+					 || (invlist[sel0] is 'HammerspaceEmbiggener') )
+					return true;
 				let t = new("MenuTransaction");
 				t.uid = GenTUID();
 				t.type = MenuTransaction.TT_ITEMUSE;
@@ -661,6 +665,14 @@ Class SWWMKnowledgeBaseMenu : GenericMenu
 				}
 				else if ( sub && (sel0 != -1) && (invlist.Size() > 0) )
 				{
+					// cannot trade these
+					if ( invlist[sel1].bUNDROPPABLE || invlist[sel1].bUNTOSSABLE )
+					{
+						MenuSound("menu/noinvuse");
+						tmsg = StringTable.Localize("$SWWM_TRADEFAIL");
+						tmsgtic = gametic+70;
+						return true;
+					}
 					// trade item
 					let t = new("MenuTransaction");
 					t.uid = GenTUID();
@@ -1696,8 +1708,10 @@ Class SWWMKnowledgeBaseMenu : GenericMenu
 			{
 				let type = (Class<Inventory>)(AllActorClasses[i]);
 				if ( !type ) continue;
-				// no fabricators outside of hexen
-				if ( !(gameinfo.gametype&GAME_Hexen) && (type is 'AmmoFabricator') ) continue;
+				// no collectables
+				if ( type is 'SWWMCollectable' ) continue;
+				// no fabricators before hexen
+				if ( !(gameinfo.gametype&(GAME_Hexen|GAME_Strife)) && (type is 'AmmoFabricator') ) continue;
 				// skip maxed items
 				let cur = players[consoleplayer].mo.FindInventory(type);
 				if ( cur && (cur.Amount >= cur.MaxAmount) ) continue;
@@ -2259,6 +2273,7 @@ Class SWWMKnowledgeBaseMenu : GenericMenu
 					return;
 				}
 				int ofs = clamp(sel0,0,max(0,cnt-22));
+				let fnt2 = LangFont(MiniwiFont);
 				// calc lengths
 				int len[4], maxlen[4];
 				for ( int i=0; i<4; i++ ) maxlen[i] = 0;
@@ -2266,41 +2281,44 @@ Class SWWMKnowledgeBaseMenu : GenericMenu
 				{
 					int sec = Thinker.Tics2Seconds(stats.lstats[i].time);
 					str = String.Format("T %02d:%02d:%02d",sec/3600,(sec%3600)/60,sec%60);
-					len[0] = fnt.StringWidth(str);
+					len[0] = fnt2.StringWidth(str);
 					if ( len[0] > maxlen[0] ) maxlen[0] = len[0];
 					str = String.Format("S %d/%d",stats.lstats[i].scount,stats.lstats[i].stotal);
-					len[1] = fnt.StringWidth(str);
+					len[1] = fnt2.StringWidth(str);
 					if ( len[1] > maxlen[1] ) maxlen[1] = len[1];
 					str = String.Format("I %d/%d",stats.lstats[i].icount,stats.lstats[i].itotal);
-					len[2] = fnt.StringWidth(str);
+					len[2] = fnt2.StringWidth(str);
 					if ( len[2] > maxlen[2] ) maxlen[2] = len[2];
 					str = String.Format("K %d/%d",stats.lstats[i].kcount,stats.lstats[i].ktotal);
-					len[3] = fnt.StringWidth(str);
+					len[3] = fnt2.StringWidth(str);
 					if ( len[3] > maxlen[3] ) maxlen[3] = len[3];
 				}
 				for ( int i=ofs; i<cnt; i++ )
 				{
 					if ( yy >= 370 ) break;
 					str = stats.lstats[i].hub?stats.lstats[i].levelname:String.Format("%s - %s",stats.lstats[i].mapname.MakeUpper(),stats.lstats[i].levelname);
-					Screen.DrawText(fnt,Font.CR_FIRE,origin.x+xx,origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
+					bool smallname = fnt.StringWidth(str)>(620-(xx+maxlen[3]+maxlen[2]+maxlen[1]+maxlen[0]+24));
+					if ( smallname ) yy += 2;
+					Screen.DrawText(smallname?fnt2:fnt,Font.CR_FIRE,origin.x+xx,origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
+					if ( !smallname ) yy += 2;
 					int ox = ((cnt>22)?623:631);
 					int sec = Thinker.Tics2Seconds(stats.lstats[i].time);
 					str = String.Format("%02d\cu:\c-%02d\cu:\c-%02d",sec/3600,(sec%3600)/60,sec%60);
-					Screen.DrawText(fnt,Font.CR_WHITE,origin.x+ox-fnt.StringWidth(str),origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
-					Screen.DrawText(fnt,Font.CR_FIRE,origin.x+ox-maxlen[0],origin.y+yy,"T",DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
-					ox -= maxlen[0]+16;
+					Screen.DrawText(fnt2,Font.CR_WHITE,origin.x+ox-fnt2.StringWidth(str),origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
+					Screen.DrawText(fnt2,Font.CR_FIRE,origin.x+ox-maxlen[0],origin.y+yy,"T",DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
+					ox -= maxlen[0]+8;
 					str = String.Format("%d\cu/\c-%d",stats.lstats[i].scount,stats.lstats[i].stotal);
-					Screen.DrawText(fnt,Font.CR_WHITE,origin.x+ox-fnt.StringWidth(str),origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
-					Screen.DrawText(fnt,Font.CR_FIRE,origin.x+ox-maxlen[1],origin.y+yy,"S",DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
-					ox -= maxlen[1]+16;
+					Screen.DrawText(fnt2,Font.CR_WHITE,origin.x+ox-fnt2.StringWidth(str),origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
+					Screen.DrawText(fnt2,Font.CR_FIRE,origin.x+ox-maxlen[1],origin.y+yy,"S",DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
+					ox -= maxlen[1]+8;
 					str = String.Format("%d\cu/\c-%d",stats.lstats[i].icount,stats.lstats[i].itotal);
-					Screen.DrawText(fnt,Font.CR_WHITE,origin.x+ox-fnt.StringWidth(str),origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
-					Screen.DrawText(fnt,Font.CR_FIRE,origin.x+ox-maxlen[2],origin.y+yy,"I",DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
-					ox -= maxlen[2]+16;
+					Screen.DrawText(fnt2,Font.CR_WHITE,origin.x+ox-fnt2.StringWidth(str),origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
+					Screen.DrawText(fnt2,Font.CR_FIRE,origin.x+ox-maxlen[2],origin.y+yy,"I",DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
+					ox -= maxlen[2]+8;
 					str = String.Format("%d\cu/\c-%d",stats.lstats[i].kcount,stats.lstats[i].ktotal);
-					Screen.DrawText(fnt,Font.CR_WHITE,origin.x+ox-fnt.StringWidth(str),origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
-					Screen.DrawText(fnt,Font.CR_FIRE,origin.x+ox-maxlen[3],origin.y+yy,"K",DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
-					yy += 16;
+					Screen.DrawText(fnt2,Font.CR_WHITE,origin.x+ox-fnt2.StringWidth(str),origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
+					Screen.DrawText(fnt2,Font.CR_FIRE,origin.x+ox-maxlen[3],origin.y+yy,"K",DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
+					yy += 14;
 				}
 				// scrollbar
 				if ( cnt > 22 )
@@ -2360,6 +2378,7 @@ Class SWWMKnowledgeBaseMenu : GenericMenu
 				else if ( (invlist[i] is 'Health') || (invlist[i] is 'HealthPickup') || (invlist[i] is 'SWWMHealth') ) clscol = Font.CR_RED;
 				else if ( (invlist[i] is 'Armor') || (invlist[i] is 'SWWMSpareArmor') ) clscol = Font.CR_GREEN;
 				else if ( invlist[i] is 'PuzzleItem' ) clscol = Font.CR_LIGHTBLUE;
+				else if ( invlist[i] is 'SWWMCollectable' ) clscol = Font.CR_FIRE;
 				Screen.DrawText(fnt,clscol,origin.x+xx,origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true,DTA_ColorOverlay,(i!=sel0)?Color(96,0,0,0):Color(0,0,0,0));
 				yy += 16;
 				if ( yy >= 370 )

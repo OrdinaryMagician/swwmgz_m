@@ -6,7 +6,7 @@ void main()
 	float w = 1.;
 	vec2 s = TexCoord;
 	float sum = 0.;
-	for ( int i=0; i<16; i++ )
+	for ( int i=0; i<32; i++ )
 	{
 		res += w*texture(InputTexture,s);
 		sum += w;

@@ -5,7 +5,7 @@ Class SWWMStatScreen : StatusScreen abstract
 	transient TextureID bgtex, arttex;
 	transient Font TewiFont, MPlusFont;
 	int whichart, whichtip;
-	transient CVar intertype, lang;
+	transient CVar intertype, lang, origmus;
 	double hs, hs2;
 	Vector2 ss, ss2, origin, origin2;
 
@@ -18,7 +18,9 @@ Class SWWMStatScreen : StatusScreen abstract
 	}
 	override void StartMusic()
 	{
-		S_ChangeMusic("music/DRAGONY.XM");
+		if ( !origmus ) origmus = CVar.GetCVar('swwm_intermusic',players[consoleplayer]);
+		if ( origmus.GetBool() ) Level.SetInterMusic(wbs.next);
+		else S_ChangeMusic("music/DRAGONY.XM");
 	}
 	private void drawSWWMBg()
 	{
@@ -110,6 +112,8 @@ Class SWWMStatScreen : StatusScreen abstract
 	{
 		Font fnt = LangFont(TewiFont);
 		String str = StringTable.Localize("$WI_ENTERING");
+		// remove trailing colon (usually appearing on Heretic)
+		if ( str.RightIndexOf(":") == (str.length()-1) ) str.Truncate(str.length()-1);
 		int len[2];
 		len[0] = fnt.StringWidth(str);
 		Screen.Dim("Black",.8,int((ss2.x-len[0]-8)/2*hs2),int(4*hs2),int((len[0]+8)*hs2),int((fnt.GetHeight()+4)*hs2));

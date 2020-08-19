@@ -1,0 +1,13 @@
+Model "FroggyChair"
+{
+	Path "models"
+
+	Model 0 "ASmallPriceToPay_d.3d"
+	Skin 0 "ASmallPriceToPay.png"
+	Scale 0.14 0.14 0.18
+	ZOffset 16
+	AngleOffset -90
+	ROTATING
+
+	FrameIndex XZW1 A 0 0
+}

@@ -1052,7 +1052,7 @@ Class HellblazerRavagerArm : Actor
 				l.target = p;
 			}
 			if ( !(ReactionTime%1) )
-				SWWMHandler.DoExplosion(self,4+reactiontime*4,1000+200*reactiontime,250-6*reactiontime);
+				SWWMHandler.DoExplosion(self,4+reactiontime*2,1000+200*reactiontime,250-6*reactiontime);
 			double spd = vel.length();
 			vel = (vel*.4+(FRandom[ExploS](-.2,.2),FRandom[ExploS](-.2,.2),FRandom[ExploS](-.2,.2))).unit()*spd;
 			Vector3 pvel = (FRandom[ExploS](-1,1),FRandom[ExploS](-1,1),FRandom[ExploS](-1,1)).unit()*FRandom[ExploS](1,5);

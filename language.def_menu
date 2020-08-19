@@ -116,6 +116,7 @@ SWWM_FTITLE = "Fun Options";
 SWWM_FUNTAGS = "Monster Renaming";
 SWWM_SIMPLEFOG = "Simplified Teleport Fog";
 SWWM_BIGTAGS = "Use Large Font for Names";
+SWWM_INTERMUSIC = "Use Original Intermission Music";
 TOOLTIP_SWWM_VOICETYPE = "Sets the voice pack for the player.";
 TOOLTIP_SWWM_MUTEVOICE = "Control what gets muted, if you'd rather have a more silent protagonist.";
 TOOLTIP_SWWM_FLASHSTRENGTH = "Screen flashes usually happen when firing some weapons, you can lower this if these effects are harmful for you.";
@@ -174,6 +175,7 @@ TOOLTIP_SWWM_MENUPAUSE = "In single player, the Demolitionist Menu by default wi
 TOOLTIP_SWWM_FUNTAGS = "Replaces the names of various vanilla monsters with funny alternatives.";
 TOOLTIP_SWWM_SIMPLEFOG = "Replaces particle-based teleport fogs with simple sprites. Useful if they cause performance issues.";
 TOOLTIP_SWWM_BIGTAGS = "By default name labels on healthbars are shown with a small, compact font. Enabling this will use a bigger one.";
+TOOLTIP_SWWM_INTERMUSIC = "If enabled, intermission screens will use the original music from the current IWAD or map pack.";
 // knowledge base
 SWWM_COMINGSOON = "(coming soon)";
 SWWM_MISSTAB = "Mission";
@@ -223,6 +225,7 @@ SWWM_RADIOTAB = "Radio";
 SWWM_GAMETAB = "Games";
 SWWM_TRADETAB = "Trading";
 SWWM_TRADEFULL = "They can't hold more of that";
+SWWM_TRADEFAIL = "You can't trade this item";
 SWWM_NOTRADE = "(no units found nearby for trade)";
 SWWM_TRADETO = "Sent to";
 SWWM_TRADEFROM = "Received from";
@@ -251,6 +254,12 @@ SWWM_HELPTXT =
 "\cx--------------------\c-\n"
 "\n"
 "\cfUp/Down:\c- Scroll\n"
+"\n"
+"\cxStats Tab - Controls\c-\n"
+"\cx--------------------\c-\n"
+"\n"
+"\cfUp/Down:\c- Scroll\n"
+"\cfLeft/Right:\c- Switch section\n"
 "\n"
 "\cxInventory Tab - Controls\c-\n"
 "\cx----------------------\c-\n"

@@ -954,6 +954,7 @@ Class SWWMLoreLibrary : Thinker
 		{
 			if ( ref ~== "Cronos" ) return true;
 			if ( ref ~== "Kirin" ) return true;	// not met
+			if ( ref ~== "AmmoFabricator" ) return true;	// not yet introduced
 		}
 		if ( !(gameinfo.gametype&GAME_Strife) )
 		{
@@ -1302,7 +1303,7 @@ Class SWWMItemSense : Thinker
 		{
 			if ( s.item != item ) continue;
 			s.updated = level.maptime+35;
-			s.pos = item.Vec3Offset(0,0,16);
+			s.pos = item.Vec3Offset(0,0,item.height);
 			return s;
 		}
 		let i = new("SWWMItemSense");
@@ -1311,7 +1312,7 @@ Class SWWMItemSense : Thinker
 		i.parent = parent;
 		i.updated = level.maptime+35;
 		i.UpdateTag();
-		i.pos = item.Vec3Offset(0,0,16);
+		i.pos = item.Vec3Offset(0,0,item.height);
 		i.next = parent.itemsense;
 		if ( parent.itemsense ) parent.itemsense.prev = i;
 		parent.itemsense = i;
@@ -1322,7 +1323,15 @@ Class SWWMItemSense : Thinker
 	void UpdateTag()
 	{
 		if ( !item ) return;
-		tag = item.GetTag();
+		// certain ammo types use the pickup message as it's amount-aware
+		if ( (item is 'RedShell') || (item is 'GreenShell')
+			|| (item is 'WhiteShell') || (item is 'BlueShell')
+			|| (item is 'BlackShell') || (item is 'PurpleShell')
+			|| (item is 'GoldShell') || (item is 'EvisceratorShell')
+			|| (item is 'HellblazerMissiles')|| (item is 'HellblazerCrackshots')
+			|| (item is 'HellblazerRavagers')|| (item is 'HellblazerWarheads') )
+			tag = item.PickupMessage();
+		else tag = item.GetTag();
 	}
 
 	override void OnDestroy()
@@ -3081,6 +3090,12 @@ Class SWWMHandler : EventHandler
 				if ( (p.type != INT_Key) || !p.trackedkey ) continue;
 				p.keytag = p.trackedkey.GetTag();
 			}
+			for ( int i=0; i<MAXPLAYERS; i++ )
+			{
+				if ( !playeringame[i] || !Demolitionist(players[i].mo) ) continue;
+				for ( SWWMItemSense s=Demolitionist(players[i].mo).itemsense; s; s=s.next )
+					s.UpdateTag();
+			}
 		}
 		curlang = lang.GetString();
 		curfuntags = funtags.GetBool();
@@ -4122,10 +4137,10 @@ Class SWWMHandler : EventHandler
 			}
 			Vector3 vel = demo.vel+demo.dashdir*demo.dashboost;
 			double baumpu = max(0.,(demo.bumptic-(gametic+e.Fractic))/35.);
-			vel *= 1.+baumpu;
+			vel += demo.dashdir*baumpu;
 			double spd = vel.length();
 			Vector3 worlddir = vel/spd;
-			Shader.SetUniform1f(p,"ZoomBlur","Fade",clamp((spd-20.)/60.,0.,.5));
+			Shader.SetUniform1f(p,"ZoomBlur","Fade",clamp((spd-20.)/60.,0.,.75));
 			double str = min(spd/50.,10.);
 			Vector3 x, y, z;
 			[x, y, z] = swwm_CoordUtil.GetAxes(e.ViewPitch,e.ViewAngle,e.ViewRoll);
