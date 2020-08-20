@@ -790,6 +790,11 @@ D_BARRIER = "The Elemental Coating wore off.";
 SWWM_YNYKRONREADY = "Ynykron Artifact ready for firing.";
 SWWM_TITLEPRESENTS = "presents";
 SWWM_TITLEMODBY = "a mod by \cxMarisa Kirisame";
+SWWM_UNIT_METER = "m";
+SWWM_UNIT_KILOMETER = "km";
+SWWM_UNIT_KPH = "km/h";
+SWWM_UNIT_LITER = "l";
+SWWM_YOURSELF = "Yourself";
 // boss tags
 BT_BRUISERS = "Bruiser Brothers";
 BT_CYBIE = "Tyrant of Babel";

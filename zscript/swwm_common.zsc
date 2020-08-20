@@ -717,6 +717,7 @@ Class SWWMStats : Thinker
 		else if ( (inflictor is 'BigBiospark') || (inflictor is 'BiosparkBall') || (inflictor is 'BiosparkBeamImpact') || (inflictor is 'BiosparkComboImpact') || (inflictor is 'BiosparkComboImpactSub') || (inflictor is 'BiosparkBeam') || (inflictor is 'BiosparkArc') ) which = 'Sparkster';
 		else if ( (inflictor is 'CandyBeam') || (inflictor is 'CandyPop') || (inflictor is 'CandyMagArm') || (inflictor is 'CandyGunProj') || (inflictor is 'CandyMagProj') || (inflictor is 'CandyBulletImpact') ) which = 'CandyGun';
 		else if ( (inflictor is 'YnykronBeam') || (inflictor is 'YnykronImpact') ) which = 'Ynykron';
+		else if ( (inflictor is 'Demolitionist') || (inflictor is 'DemolitionistShockwave') || (inflictor is 'DemolitionistRadiusShockwave') ) which = 'SWWMWeapon';	// hack to assume Demolitionist as weapon
 		if ( !which ) return;
 		for ( int i=0; i<wstats.Size(); i++ )
 		{

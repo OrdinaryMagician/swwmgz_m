@@ -2144,16 +2144,16 @@ Class SWWMKnowledgeBaseMenu : GenericMenu
 				str = String.Format("\cx%s\c-%02d\cu:\c-%02d\cu:\c-%02d",StringTable.Localize("$SWWM_STATUPTIME"),thour,tmin,tsec);
 				Screen.DrawText(fnt,Font.CR_WHITE,origin.x+xx,origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
 				yy += 16;
-				if ( stats.grounddist > 32000. ) str = String.Format("\cx%s\c-%g\cuk%s\c-",StringTable.Localize("$SWWM_STATONFOOT"),stats.grounddist/32000.,StringTable.Localize("$SWWM_STATSMETER"));
-				else str = String.Format("\cx%s\c-%g\cum\c-",StringTable.Localize("$SWWM_STATONFOOT"),stats.grounddist/32.);
+				if ( stats.grounddist > 32000. ) str = String.Format("\cx%s\c-%g\cu%s\c-",StringTable.Localize("$SWWM_STATONFOOT"),stats.grounddist/32000.,StringTable.Localize("$SWWM_UNIT_METER"));
+				else str = String.Format("\cx%s\c-%g\cu%s\c-",StringTable.Localize("$SWWM_STATONFOOT"),stats.grounddist/32.,StringTable.Localize("$SWWM_UNIT_METER"));
 				Screen.DrawText(fnt,Font.CR_WHITE,origin.x+xx,origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
 				yy += 16;
-				if ( stats.airdist > 32000. ) str = String.Format("\cx%s\c-%g\cuk%s\c-",StringTable.Localize("$SWWM_STATFLIGHT"),stats.airdist/32000.,StringTable.Localize("$SWWM_STATSMETER"));
-				else str = String.Format("\cx%s\c-%g\cum\c-",StringTable.Localize("$SWWM_STATFLIGHT"),stats.airdist/32.);
+				if ( stats.airdist > 32000. ) str = String.Format("\cx%s\c-%g\cu%s\c-",StringTable.Localize("$SWWM_STATFLIGHT"),stats.airdist/32000.,StringTable.Localize("$SWWM_UNIT_KILOMETER"));
+				else str = String.Format("\cx%s\c-%g\cu%s\c-",StringTable.Localize("$SWWM_STATFLIGHT"),stats.airdist/32.,StringTable.Localize("$SWWM_UNIT_METER"));
 				Screen.DrawText(fnt,Font.CR_WHITE,origin.x+xx,origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
 				yy += 16;
-				if ( stats.swimdist > 32000. ) str = String.Format("\cx%s\c-%g\cuk%s\c-",StringTable.Localize("$SWWM_STATSWIM"),stats.swimdist/32000.,StringTable.Localize("$SWWM_STATSMETER"));
-				else str = String.Format("\cx%s\c-%g\cum\c-",StringTable.Localize("$SWWM_STATSWIM"),stats.swimdist/32.);
+				if ( stats.swimdist > 32000. ) str = String.Format("\cx%s\c-%g\cu%s\c-",StringTable.Localize("$SWWM_STATSWIM"),stats.swimdist/32000.,StringTable.Localize("$SWWM_UNIT_KILOMETER"));
+				else str = String.Format("\cx%s\c-%g\cu%s\c-",StringTable.Localize("$SWWM_STATSWIM"),stats.swimdist/32.,StringTable.Localize("$SWWM_UNIT_METER"));
 				Screen.DrawText(fnt,Font.CR_WHITE,origin.x+xx,origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
 				yy += 16;
 				str = String.Format("\cx%s\c-%d",StringTable.Localize("$SWWM_STATBOOST"),stats.boostcount);
@@ -2165,10 +2165,10 @@ Class SWWMKnowledgeBaseMenu : GenericMenu
 				str = String.Format("\cx%s\c-%d",StringTable.Localize("$SWWM_STATSTOMP"),stats.stompcount);
 				Screen.DrawText(fnt,Font.CR_WHITE,origin.x+xx,origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
 				yy += 16;
-				str = String.Format("\cx%s\c-%g\cu%s\c-",StringTable.Localize("$SWWM_STATFUEL"),stats.fuelusage/60.,StringTable.Localize("$SWWM_STATLITER"));
+				str = String.Format("\cx%s\c-%g\cu%s\c-",StringTable.Localize("$SWWM_STATFUEL"),stats.fuelusage/60.,StringTable.Localize("$SWWM_UNIT_LITER"));
 				Screen.DrawText(fnt,Font.CR_WHITE,origin.x+xx,origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
 				yy += 16;
-				str = String.Format("\cx%s\c-%g\cu%s\c-",StringTable.Localize("$SWWM_STATSPEED"),stats.topspeed*32000./(3600*Thinker.TICRATE),StringTable.Localize("$SWWM_STATKMH"));
+				str = String.Format("\cx%s\c-%g\cu%s\c-",StringTable.Localize("$SWWM_STATSPEED"),stats.topspeed*32000./(3600*Thinker.TICRATE),StringTable.Localize("$SWWM_UNIT_KPH"));
 				Screen.DrawText(fnt,Font.CR_WHITE,origin.x+xx,origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
 				yy += 16;
 				thour = (stats.airtime/(3600*Thinker.TICRATE));
@@ -2213,8 +2213,13 @@ Class SWWMKnowledgeBaseMenu : GenericMenu
 				if ( stats.favweapon == -1 ) str = str.."N/A";
 				else
 				{
-					let def = GetDefaultByType(stats.wstats[stats.favweapon].w);
-					str = str..def.GetTag();
+					if ( stats.wstats[stats.favweapon].w == 'SWWMWeapon' )
+						str = str..StringTable.Localize("$SWWM_YOURSELF");
+					else
+					{
+						let def = GetDefaultByType(stats.wstats[stats.favweapon].w);
+						str = str..def.GetTag();
+					}
 				}
 				Screen.DrawText(fnt,Font.CR_WHITE,origin.x+xx,origin.y+yy,str,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
 				yy += 16;

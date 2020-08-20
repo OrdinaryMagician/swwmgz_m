@@ -741,6 +741,7 @@ D_BARRIER = "El Revestimiento Elemental se ha desvanecido.";
 SWWM_YNYKRONREADY = "Artefacto Ynykron listo para disparar.";
 SWWM_TITLEPRESENTS = "presenta";
 SWWM_TITLEMODBY = "un mod de \cxMarisa Kirisame";
+SWWM_YOURSELF = "Tú";
 // boss tags
 BT_BRUISERS = "Hermanos de Guerra";
 BT_CYBIE = "Tirano de Babel";

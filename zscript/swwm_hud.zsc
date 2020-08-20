@@ -642,8 +642,8 @@ Class SWWMStatusBar : BaseStatusBar
 	static private string FormatDist( double dist )
 	{
 		double meters = dist/32.;
-		if ( meters > 1000. ) return String.Format("\cj%d\cckm",int(meters/1000.));
-		return String.Format("\cj%d\ccm",int(meters));
+		if ( meters > 1000. ) return String.Format("\cj%d\cc%s",int(meters/1000.),StringTable.Localize("$SWWM_UNIT_KILOMETER"));
+		return String.Format("\cj%d\cc%s",int(meters),StringTable.Localize("$SWWM_UNIT_METER"));
 	}
 
 	private void DrawTarget()

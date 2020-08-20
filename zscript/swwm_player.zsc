@@ -674,7 +674,7 @@ Class Demolitionist : PlayerPawn
 				if ( FindInventory("RagekitPower") ) flg |= DMG_FOILINVUL;
 				if ( !a.player && !a.bDONTBLAST ) a.bBLASTED = true;
 				int dmg = int(15+spd*2.5);
-				if ( dir dot viewdir < -.3 ) dmg *= 2;	// BUTTSLAM
+				if ( dir dot viewdir < -.3 ) dmg *= 3;	// BUTTSLAM
 				dmg = a.DamageMobj(self,self,dmg,'Dash',flg);
 				if ( FindInventory("RagekitPower") )
 				{
