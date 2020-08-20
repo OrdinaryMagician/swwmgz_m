@@ -483,6 +483,11 @@ D_BARRIER = "Стихийное покрытие иссякло.";
 SWWM_YNYKRONREADY = "Артефакт Юнукрон готов к стрельбе.";
 SWWM_TITLEPRESENTS = "представляет";
 SWWM_TITLEMODBY = "мод от \cxMarisa Kirisame";
+SWWM_UNIT_METER = "м";
+SWWM_UNIT_KILOMETER = "км";
+SWWM_UNIT_KPH = "км/ч";
+SWWM_UNIT_LITER = "л";
+SWWM_YOURSELF = "Вы сами";
 // boss tags
 BT_BRUISERS = "Супер Бруизер Брос";
 BT_CYBIE = "Стреляй, пока не умрет";
