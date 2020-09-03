@@ -55,6 +55,10 @@ user int swwm_numscale = 0;			// damnum scaling (0 = use GZDoom scaling)
 user int swwm_poiscale = 0;			// point of interest scaling (0 = use GZDoom scaling)
 user int swwm_detscale = 0;			// item sense scaling (0 = use GZDoom scaling)
 server bool swwm_blood = false;			// custom blood/gibbing
+server int swwm_maxblood = 1000;		// max blood effects at any time
+server int swwm_maxgibs = 200;			// max gibs at any time
+server int swwm_maxcasings = 200;		// max casings and spent mags at any time
+server int swwm_maxdebris = 1000;		// max chunks of debris at any time
 user bool swwm_fuzz = true;			// allows toggling the fuzz shader on the demolitionist menus, useful if you're streaming/recording since it destroys the encoding quality
 user bool swwm_cbtpause = true;			// wallbuster menu pauses the game
 user noarchive int swwm_cbtmeme = 0;		// easter egg, hidden cvar

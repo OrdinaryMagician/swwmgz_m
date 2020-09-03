@@ -1,5 +1,6 @@
 $pitchshiftrange 0
 
+crash/crash	sounds/DUCK.ogg
 crash/glass	sounds/GLASSCRK.ogg
 crash/curb	sounds/CURB.ogg
 brutal/ezmodo	sounds/EASYMODO.ogg

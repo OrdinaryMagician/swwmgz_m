@@ -1,0 +1,166 @@
+// additional hud things
+
+// Press F to Pay Respects
+Class PayRespects : HUDMessageBase
+{
+	Vector2 basepos;
+	int lifespan, initialspan, starttic;
+	transient Font TewiFont;
+	double scale;
+	Vector2 hs, ss;
+	int seed, seed2;
+
+	static PayRespects PressF()
+	{
+		let f = new("PayRespects");
+		f.basepos = (FRandom[FInTheChat](0.,1.),FRandom[FInTheChat](1.02,1.05));
+		f.scale = FRandom[FInTheChat](.5,2.);
+		f.lifespan = f.initialspan = Random[FInTheChat](20,80);
+		f.starttic = level.maptime;
+		f.seed = Random[FInTheChat]();
+		f.seed2 = Random[FInTheChat]();
+		f.ScreenSizeChanged();
+		return f;
+	}
+
+	override bool Tick()
+	{
+		lifespan--;
+		return (lifespan<=0);
+	}
+
+	override void ScreenSizeChanged()
+	{
+		hs = StatusBar.GetHUDScale()*scale;
+		ss = (Screen.GetWidth()/hs.x,Screen.GetHeight()/hs.y);
+	}
+
+	override void Draw( int bottom, int visibility )
+	{
+		Vector2 realpos = (basepos.x*ss.x,basepos.y*ss.y);
+		if ( !TewiFont ) TewiFont = Font.GetFont('TewiShaded');
+		Vector2 fo = (TewiFont.StringWidth("F")/2.,-TewiFont.GetHeight());
+		// F rise up
+		int initspd = (128-seed);
+		if ( (initspd >= 0) && (initspd < 32) ) initspd = 32;
+		if ( (initspd < 0) && (initspd > -32) ) initspd = -32;
+		int boostup = 32+(seed2/4);
+		double fractic = SWWMStatusBar(statusbar)?SWWMStatusBar(statusbar).fractic:0;
+		fo.x += (.15*initspd)*((initialspan-(lifespan-fractic))**.6);
+		fo.y += ((initialspan-(lifespan-fractic))**1.6)-boostup*sin((90./initialspan)*(level.maptime+fractic-starttic));
+		double alph = clamp((lifespan+fractic)/double(initialspan),0.,1.);
+		Screen.DrawText(TewiFont,Font.CR_GREEN,realpos.x-fo.x,realpos.y-fo.y,"F",DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true,DTA_Alpha,alph);
+	}
+}
+
+// One-liners
+Class SWWMOneLiner : HUDMessageBase
+{
+	String whichline;
+	int lifespan, curtime;
+	transient Font TewiFont, MPlusFont;
+	transient CVar safezone, lang, hscale;
+
+	static SWWMOneLiner Make( String whichline, int lifespan )
+	{
+		let l = new("SWWMOneLiner");
+		l.whichline = whichline;
+		l.curtime = l.lifespan = lifespan;
+		return l;
+	}
+
+	override bool Tick()
+	{
+		if ( players[consoleplayer].Health <= 0 ) curtime = int.min;
+		curtime--;
+		return (curtime<-20);
+	}
+
+	override void Draw( int bottom, int visibility )
+	{
+		if ( !safezone ) safezone = CVar.GetCVar('swwm_hudmargin',players[consoleplayer]);
+		if ( !lang ) lang = CVar.GetCVar('language',players[consoleplayer]);
+		if ( !TewiFont ) TewiFont = Font.GetFont('TewiShaded');
+		if ( !MPlusFont ) MPlusFont = Font.GetFont('MPlusShaded');
+		if ( !hscale ) hscale = CVar.GetCVar('swwm_hudscale',players[consoleplayer]);
+		int margin = safezone.GetInt();
+		Vector2 hs;
+		if ( hscale.GetInt() <= 0 ) hs = StatusBar.GetHUDScale();
+		else
+		{
+			hs.x = hscale.GetInt();
+			if ( Screen.GetWidth()/hs.x < 640. ) hs.x = max(1,floor(Screen.GetWidth()/640.));
+			hs.y = hs.x;
+		}
+		Vector2 ss = (Screen.GetWidth()/hs.x,Screen.GetHeight()/hs.y);
+		String loc = StringTable.Localize(whichline);
+		if ( loc.Length() <= 0 ) return;	// don't draw empty strings
+		String locs = StringTable.Localize("$SWWM_LQUOTE")..loc..StringTable.Localize("$SWWM_RQUOTE");
+		Font fnt = TewiFont;
+		if ( lang.GetString() ~== "jp" ) fnt = MPlusFont;
+		// split so it can fit
+		BrokenLines l = fnt.BreakLines(locs,int(ss.x*.5));
+		int maxlen = 0;
+		for ( int i=0; i<l.Count(); i++ )
+		{
+			int len = fnt.StringWidth(l.StringAt(i));
+			if ( len > maxlen ) maxlen = len;
+		}
+		int h = fnt.GetHeight();
+		int fh = h*l.Count();
+		double alph = clamp((curtime/20.)+1.,0.,1.);
+		alph *= clamp((lifespan-curtime)/10.,0.,1.);
+		Screen.Dim("Black",alph*.8,int((Screen.GetWidth()-(maxlen+12)*hs.x)/2.),int(bottom-(margin+2+fh)*hs.y),int((maxlen+12)*hs.x),int((fh+4)*hs.y));
+		int yy = margin+fh;
+		for ( int i=0; i<l.Count(); i++ )
+		{
+			int len = fnt.StringWidth(l.StringAt(i));
+			Screen.DrawText(fnt,Font.CR_FIRE,int((ss.x-len)/2.),(bottom/hs.y)-yy,l.StringAt(i),DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true,DTA_Alpha,alph);
+			yy -= h;
+		}
+	}
+}
+
+Class LastLine
+{
+	String type;
+	int lineno;
+}
+
+// Screen flashes from DT
+Class GenericFlash : HUDMessageBase
+{
+	Color col;
+	int duration;
+	double alpha;
+	Actor cam;
+	transient CVar str;
+	GenericFlash Setup( Actor camera, Color c, int d )
+	{
+		alpha = 1.0;
+		col = c;
+		duration = d;
+		cam = camera;
+		return self;
+	}
+	override bool Tick()
+	{
+		if ( duration > 0 ) alpha -= 1./duration;
+		return (alpha<=0)||(!cam);
+	}
+	override void Draw( int bottom, int visibility )
+	{
+		if ( automapactive || (visibility != BaseStatusBar.HUDMSGLayer_UnderHUD) ) return;
+		if ( cam && (players[consoleplayer].camera != cam) ) return;
+		if ( !str ) str = CVar.GetCVar('swwm_flashstrength',players[consoleplayer]);
+		Screen.Dim(col,(col.a/255.)*alpha*str.GetFloat(),0,0,Screen.GetWidth(),Screen.GetHeight());
+	}
+}
+
+Class QueuedFlash
+{
+	Color c;
+	int duration;
+	int tic;
+	Actor cam;
+}

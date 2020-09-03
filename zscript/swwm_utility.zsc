@@ -1,0 +1,688 @@
+// Misc. Utility code
+
+enum EDoExplosionFlags
+{
+	DE_BLAST = 1,		// sets BLASTED flag on pushed actors
+	DE_NOBLEED = 2,		// does not spawn blood decals on hit
+	DE_NOSPLASH = 4,	// like XF_NOSPLASH
+	DE_THRUWALLS = 8,	// damages through geometry (no sight check)
+	DE_NOTMISSILE = 16,	// instigator is the source itself (normally it'd be its target pointer)
+	DE_EXTRAZTHRUST = 32,	// applies a higher Z thrust to enemies on ground
+};
+
+Class SWWMUtility
+{
+	static clearscope void StripColor( out String str )
+	{
+		int len = str.CodePointCount();
+		for ( int i=0; i<len; i++ )
+		{
+			int remlen = 0;
+			if ( str.GetNextCodePoint(i) != 0x1C )
+				continue;
+			remlen++;
+			if ( str.GetNextCodePoint(i+remlen) == 0x5B )
+				while ( str.GetNextCodePoint(i+remlen) != 0x5D )
+					remlen++;
+			remlen++;
+			str.Remove(i,remlen);
+			len -= remlen;
+		}
+	}
+
+	static clearscope String SuperscriptNum( int val )
+	{
+		// unicode is fun
+		static const int digs[] = {0x2070,0x00B9,0x00B2,0x00B3,0x2074,0x2075,0x2076,0x2077,0x2078,0x2079};
+		String str = "";
+		int digits = int(Log10(val));
+		for ( int i=digits; i>=0; i-- )
+		{
+			int d = int(val/(10**i))%10;
+			str.AppendCharacter(digs[d]);
+		}
+		return str;
+	}
+
+	static clearscope void BeautifyClassName( out String str )
+	{
+		String workstr = str;
+		str.Truncate(0);
+		workstr.Replace("_"," ");
+		int len = workstr.CodePointCount();
+		for ( int i=0; i<len; i++ )
+		{
+			int cp1 = workstr.GetNextCodePoint(i);
+			str.AppendCharacter(cp1);
+			if ( i < len-1 )
+			{
+				int cp2 = workstr.GetNextCodePoint(i+1);
+				if ( (String.CharLower(cp1) == cp1) && (String.CharUpper(cp2) == cp2) )
+					str.AppendCharacter(0x20);
+			}
+		}
+	}
+
+	static clearscope int GetLineLock( Line l )
+	{
+		int locknum = l.locknumber;
+		if ( !locknum )
+		{
+			// check the special
+			switch ( l.special )
+			{
+			case FS_Execute:
+				locknum = l.Args[2];
+				break;
+			case Door_LockedRaise:
+			case Door_Animated:
+				locknum = l.Args[3];
+				break;
+			case ACS_LockedExecute:
+			case ACS_LockedExecuteDoor:
+			case Generic_Door:
+				locknum = l.Args[4];
+				break;
+			}
+		}
+		return locknum;
+	}
+
+	static clearscope bool IsExitLine( Line l )
+	{
+		if ( (l.special == Exit_Normal) || (l.special == Exit_Secret) || (l.special == Teleport_EndGame) || (l.special == Teleport_NewMap) )
+			return true;
+		return false;
+	}
+
+	// how the fuck is this not available to ZScript?
+	// copied from P_PointOnLineSidePrecise()
+	static clearscope int PointOnLineSide( Vector2 p, Line l )
+	{
+		if ( !l ) return 0;
+		return (((p.y-l.v1.p.y)*l.delta.x+(l.v1.p.x-p.x)*l.delta.y) > double.epsilon);
+	}
+
+	// box intersection check, for collision detection
+	static clearscope bool BoxIntersect( Actor a, Actor b, Vector3 ofs = (0,0,0), int pad = 0 )
+	{
+		Vector3 diff = level.Vec3Diff(level.Vec3Offset(a.pos,ofs),b.pos);
+		if ( (abs(diff.x) > (a.radius+b.radius+pad)) || (abs(diff.y) > (a.radius+b.radius+pad)) ) return false;
+		if ( (diff.z > a.height+pad) || (diff.z < -(b.height+pad)) ) return false;
+		return true;
+	}
+
+	// extruded box intersection check, useful when checking things that might be hit along a path
+	static clearscope bool ExtrudeIntersect( Actor a, Actor b, Vector3 range, int steps, int pad = 0 )
+	{
+		if ( steps <= 0 ) return BoxIntersect(a,b,pad:pad);
+		double step = 1./steps;
+		for ( double i=step; i<=1.; i+=step )
+		{
+			if ( BoxIntersect(a,b,range*i,pad) )
+				return true;
+		}
+		return false;
+	}
+
+	// sphere intersection check, useful for proximity detection
+	static clearscope bool SphereIntersect( Actor a, Vector3 p, double radius )
+	{
+		Vector3 ap = p+level.Vec3Diff(p,a.pos);	// portal-relative actor position
+		Vector3 amin = ap+(-a.radius,-a.radius,0),
+			amax = ap+(a.radius,a.radius,a.height);
+		double distsq = 0.;
+		if ( p.x < amin.x ) distsq += (amin.x-p.x)**2;
+		if ( p.x > amax.x ) distsq += (p.x-amax.x)**2;
+		if ( p.y < amin.y ) distsq += (amin.y-p.y)**2;
+		if ( p.y > amax.y ) distsq += (p.y-amax.y)**2;
+		if ( p.z < amin.z ) distsq += (amin.z-p.z)**2;
+		if ( p.z > amax.z ) distsq += (p.z-amax.z)**2;
+		return (distsq <= (radius**2));
+	}
+
+	// THANKS FOR NOT GIVING US ANY OTHER WAY TO CHECK IF A LOCK NUMBER IS VALID
+	static clearscope bool IsValidLockNum( int l )
+	{
+		if ( (l < 1) || (l > 255) ) return true;
+		Array<Int> valid;
+		valid.Clear();
+		for ( int i=0; i<Wads.GetNumLumps(); i++ )
+		{
+			String lname = Wads.GetLumpName(i);
+			if ( !(lname ~== "LOCKDEFS") ) continue;
+			String data = Wads.ReadLump(i);
+			Array<String> lines;
+			lines.Clear();
+			data.Split(lines,"\n");
+			for ( int j=0; j<lines.Size(); j++ )
+			{
+				if ( lines[j].Left(10) ~== "CLEARLOCKS" ) valid.Clear();
+				else if ( Lines[j].Left(5) ~== "LOCK " )
+				{
+					Array<String> spl;
+					spl.Clear();
+					lines[j].Split(spl," ",TOK_SKIPEMPTY);
+					// check game string (if any)
+					if ( spl.Size() > 2 )
+					{
+						if ( (spl[2] ~== "DOOM") && !(gameinfo.gametype&GAME_Doom) ) continue;
+						else if ( (spl[2] ~== "HERETIC") && !(gameinfo.gametype&GAME_Heretic) ) continue;
+						else if ( (spl[2] ~== "HEXEN") && !(gameinfo.gametype&GAME_Hexen) ) continue;
+						else if ( (spl[2] ~== "STRIFE") && !(gameinfo.gametype&GAME_Strife) ) continue;
+						else if ( (spl[2] ~== "CHEX") && !(gameinfo.gametype&GAME_Chex) ) continue;
+					}
+					valid.Push(spl[1].ToInt());
+				}
+			}
+		}
+		for ( int i=0; i<valid.Size(); i++ )
+		{
+			if ( valid[i] == l ) return true;
+		}
+		return false;
+	}
+
+	// wheeeeeeee, let's play a game of "who is who"
+	static clearscope bool IsCivilian( Actor a )
+	{
+		if ( a is 'Beggar' )
+		{
+			if ( (a.level.mapname ~== "MAP32") && (a is 'Beggar1') )
+				return false;	// Prisoner (sorry but we have to)
+			return true;
+		}
+		if ( a is 'Peasant' )
+		{
+			// exclude certain key NPCs
+			if ( (a.level.mapname ~== "MAP01") && (a is 'Peasant9') )
+				return false;	// Beldin (sorry but we have to)
+			if ( (a.level.mapname ~== "MAP02") && (a is 'Peasant22') )
+				return false;	// Mourel (fuck that guy)
+			if ( (a.level.mapname ~== "MAP02") && (a is 'Peasant4') )
+				return false;	// Harris (also fuck that guy)
+			if ( (a.level.mapname ~== "MAP04") && (a is 'Peasant5') )
+				return false;	// Derwin (fat bastard)
+			if ( (a.level.mapname ~== "MAP04") && (a is 'Peasant7') )
+				return false;	// Ketrick (THIS IS GARBAGE)
+			if ( (a.level.mapname ~== "MAP05") && (a is 'Peasant7') )
+				return false;	// Montag (gimme the damn key)
+			if ( (a.level.mapname ~== "MAP05") && (a is 'Peasant8') )
+				return false;	// Wolenick (gimme a hand)
+			if ( (a.level.mapname ~== "MAP33") && (a is 'Peasant5') )
+				return false;	// Harris (also fuck that guy)
+			return true;
+		}
+		return false;
+	}
+
+	// Thanks to ZZYZX and Nash
+	static play void SetToSlope( Actor a, double dang )
+	{
+		vector3 fnormal = a.CurSector.floorplane.Normal;
+		// find closest 3d floor for its normal
+		F3DFloor ff;
+		for ( int i=0; i<a.CurSector.Get3DFloorCount(); i++ )
+		{
+			if ( !(a.CurSector.Get3DFloor(i).top.ZAtPoint(a.pos.xy) ~== a.floorz) ) continue;
+			ff = a.CurSector.Get3DFloor(i);
+			break;
+		}
+		if ( ff ) fnormal = -ff.top.Normal;
+		vector2 fnormalp1 = ((fnormal.x != 0) || (fnormal.y != 0))?(fnormal.x,fnormal.y).Unit():(0,0);
+		vector2 fnormalp2 = ((fnormal.x,fnormal.y).Length(),fnormal.z);
+		double fang = atan2(fnormalp1.y,fnormalp1.x); // floor angle (not pitch!)
+		double fpitch = atan2(fnormalp2.x,fnormalp2.y); // floor pitch
+		double ddiff1 = sin(fang-dang);
+		double ddiff2 = cos(fang-dang);
+		a.pitch = fpitch*ddiff2;
+		a.roll = -fpitch*ddiff1;
+		a.angle = dang;
+	}
+
+	static clearscope int Round100( double x )
+	{
+		return int(ceil(x/100.)*100.);
+	}
+
+	// can't make clearscope because of SectorEffect.GetSector(), isn't that amazing?
+	static play bool IsDoorSector( Sector s, int part )
+	{
+		// super-easy mode: check for boss special sectors
+		if ( (level.mapname ~== "E1M8") || (level.mapname ~== "E2M8") || (level.mapname ~== "E3M8")
+			|| (level.mapname ~== "E4M6") || (level.mapname ~== "E4M8") || (level.mapname ~== "E5M8")
+			|| (level.mapname ~== "MAP07") )
+		{
+			let si = level.CreateSectorTagIterator(666);
+			int idx;
+			while ( (idx = si.Next()) != -1 )
+				if ( level.Sectors[idx] == s )
+					return true;
+			if ( level.mapname ~== "MAP07" )
+			{
+				let si2 = level.CreateSectorTagIterator(667);
+				while ( (idx = si.Next()) != -1 )
+					if ( level.Sectors[idx] == s )
+						return true;
+			}
+		}
+		// easy mode: check if it's already moving
+		if ( part )
+		{
+			let ti = ThinkerIterator.Create("MovingCeiling",Thinker.STAT_SECTOREFFECT);
+			MovingCeiling mc;
+			while ( mc = MovingCeiling(ti.Next()) )
+				if ( mc.GetSector() == s )
+					return true;
+		}
+		else
+		{
+			let ti = ThinkerIterator.Create("MovingFloor",Thinker.STAT_SECTOREFFECT);
+			MovingFloor mf;
+			while ( mf = MovingFloor(ti.Next()) )
+				if ( mf.GetSector() == s )
+					return true;
+		}
+		// hard mode: look for all lines/actors with movement specials referencing us
+		for ( int i=0; i<level.Lines.Size(); i++ )
+		{
+			Line l = level.Lines[i];
+			if ( !l.special ) continue;
+			if ( (part && (l.special >= 10) && (l.special <= 13))
+				|| (!part && (l.special >= 20) && (l.special <= 25))
+				|| (!part && (l.special == 28))
+				|| ((l.special >= 29) && (l.special <= 30))
+				|| (!part && (l.special >= 35) && (l.special <= 37))
+				|| (part && (l.special >= 40) && (l.special <= 45))
+				|| (!part && (l.special == 46))
+				|| (part && (l.special == 47))
+				|| (!part && (l.special >= 60) && (l.special <= 68))
+				|| (part && (l.special == 69))
+				|| ((l.special >= 94) && (l.special <= 96))
+				|| (part && (l.special == 97))
+				|| (!part && (l.special == 99))
+				|| (part && (l.special == 104))
+				|| (part && (l.special >= 105) && (l.special <= 106))
+				|| (part && (l.special >= 168) && (l.special <= 169))
+				|| (!part && (l.special == 172))
+				|| (part && (l.special >= 192) && (l.special <= 199))
+				|| (!part && (l.special == 200))
+				|| (part && (l.special >= 201) && (l.special <= 202))
+				|| (!part && (l.special == 203))
+				|| (part && (l.special == 205))
+				|| (!part && (l.special >= 206) && (l.special <= 207))
+				|| (!part && (l.special == 228))
+				|| (!part && (l.special >= 230) && (l.special <= 231))
+				|| (!part && (l.special >= 238) && (l.special <= 242))
+				|| ((l.special >= 245) && (l.special <= 247))
+				|| (part && (l.special == 249))
+				|| (!part && (l.special >= 250) && (l.special <= 251))
+				|| (part && (l.special >= 251) && (l.special <= 255))
+				|| (!part && (l.special >= 256) && (l.special <= 261))
+				|| (part && (l.special >= 262) && (l.special <= 269))
+				|| (!part && (l.special == 275))
+				|| (part && (l.special == 276))
+				|| (!part && (l.special == 279))
+				|| (part && (l.special == 280)) )
+			{
+				let si = level.CreateSectorTagIterator(l.Args[0],l);
+				int idx;
+				while ( (idx = si.Next()) != -1 )
+					if ( level.Sectors[idx] == s )
+						return true;
+			}
+		}
+		let ti = ThinkerIterator.Create("Actor");
+		Actor a;
+		while ( a = Actor(ti.Next()) )
+		{
+			if ( !a.special || !a.Args[0] ) continue;
+			if ( (part && (a.special >= 10) && (a.special <= 13))
+				|| (!part && (a.special >= 20) && (a.special <= 25))
+				|| (!part && (a.special == 28))
+				|| ((a.special >= 29) && (a.special <= 30))
+				|| (!part && (a.special >= 35) && (a.special <= 37))
+				|| (part && (a.special >= 40) && (a.special <= 45))
+				|| (!part && (a.special == 46))
+				|| (part && (a.special == 47))
+				|| (!part && (a.special >= 60) && (a.special <= 68))
+				|| (part && (a.special == 69))
+				|| ((a.special >= 94) && (a.special <= 96))
+				|| (part && (a.special == 97))
+				|| (!part && (a.special == 99))
+				|| (part && (a.special == 104))
+				|| (part && (a.special >= 105) && (a.special <= 106))
+				|| (part && (a.special >= 168) && (a.special <= 169))
+				|| (!part && (a.special == 172))
+				|| (part && (a.special >= 192) && (a.special <= 199))
+				|| (!part && (a.special == 200))
+				|| (part && (a.special >= 201) && (a.special <= 202))
+				|| (!part && (a.special == 203))
+				|| (part && (a.special == 205))
+				|| (!part && (a.special >= 206) && (a.special <= 207))
+				|| (!part && (a.special == 228))
+				|| (!part && (a.special >= 230) && (a.special <= 231))
+				|| (!part && (a.special >= 238) && (a.special <= 242))
+				|| ((a.special >= 245) && (a.special <= 247))
+				|| (part && (a.special == 249))
+				|| (!part && (a.special >= 250) && (a.special <= 251))
+				|| (part && (a.special >= 251) && (a.special <= 255))
+				|| (!part && (a.special >= 256) && (a.special <= 261))
+				|| (part && (a.special >= 262) && (a.special <= 269))
+				|| (!part && (a.special == 275))
+				|| (part && (a.special == 276))
+				|| (!part && (a.special == 279))
+				|| (part && (a.special == 280)) )
+			{
+				let si = level.CreateSectorTagIterator(a.Args[0]);
+				int idx;
+				while ( (idx = si.Next()) != -1 )
+					if ( level.Sectors[idx] == s )
+						return true;
+			}
+		}
+		return false;
+	}
+
+	// because GetTag() returns the localized string, we need to do things the hard way
+	static clearscope String GetFunTag( Actor a, String defstr = "" )
+	{
+		if ( a is 'SWWMMonster' ) return SWWMMonster(a).GetFunTag(defstr);
+		int ntags = 1;
+		String basetag = "";
+		switch ( a.GetClassName() )
+		{
+		// Doom
+		case 'ZombieMan':
+		case 'StealthZombieMan':
+			basetag = "ZOMBIE";
+			break;
+		case 'ShotgunGuy':
+		case 'StealthShotgunGuy':
+			basetag = "SHOTGUN";
+			break;
+		case 'ChaingunGuy':
+		case 'StealthChaingunGuy':
+			basetag = "HEAVY";
+			break;
+		case 'DoomImp':
+		case 'StealthDoomImp':
+			basetag = "IMP";
+			break;
+		case 'Demon':
+		case 'StealthDemon':
+			basetag = "DEMON";
+			break;
+		case 'Spectre':
+			basetag = "SPECTRE";
+			break;
+		case 'LostSoul':
+			basetag = "LOST";
+			break;
+		case 'Cacodemon':
+		case 'StealthCacodemon':
+			basetag = "CACO";
+			break;
+		case 'HellKnight':
+		case 'StealthHellKnight':
+			basetag = "HELL";
+			break;
+		case 'BaronOfHell':
+		case 'StealthBaron':
+			basetag = "BARON";
+			break;
+		case 'Arachnotron':
+		case 'StealthArachnotron':
+			basetag = "ARACH";
+			break;
+		case 'PainElemental':
+			basetag = "PAIN";
+			break;
+		case 'Revenant':
+		case 'StealthRevenant':
+			basetag = "REVEN";
+			break;
+		case 'Fatso':
+		case 'StealthFatso':
+			basetag = "MANCU";
+			break;
+		case 'Archvile':
+		case 'StealthArchvile':
+			basetag = "ARCH";
+			break;
+		case 'SpiderMastermind':
+			basetag = "SPIDER";
+			break;
+		case 'Cyberdemon':
+			basetag = "CYBER";
+			break;
+		case 'BossBrain':
+			basetag = "BOSSBRAIN";
+			break;
+		case 'WolfensteinSS':
+			basetag = "WOLFSS";
+			break;
+		case 'CommanderKeen':
+			basetag = "KEEN";
+			break;
+		case 'MBFHelperDog':
+			basetag = "DOG";
+			break;
+		// Heretic
+		case 'Chicken':
+			basetag = "CHICKEN";
+			break;
+		case 'Beast':
+			basetag = "BEAST";
+			break;
+		case 'Clink':
+			basetag = "CLINK";
+			break;
+		case 'Sorcerer1':
+		case 'Sorcerer2':
+			basetag = "DSPARIL";
+			break;
+		case 'HereticImp':
+		case 'HereticImpLeader':
+			basetag = "HERETICIMP";
+			break;
+		case 'Ironlich':
+			basetag = "IRONLICH";
+			break;
+		case 'Knight':
+		case 'KnightGhost':
+			basetag = "BONEKNIGHT";
+			break;
+		case 'Minotaur':
+		case 'MinotaurFriend':
+			basetag = "MINOTAUR";
+			break;
+		case 'Mummy':
+		case 'MummyGhost':
+			basetag = "MUMMY";
+			break;
+		case 'MummyLeader':
+		case 'MummyLeaderGhost':
+			basetag = "MUMMYLEADER";
+			break;
+		case 'Snake':
+			basetag = "SNAKE";
+			break;
+		case 'Wizard':
+			basetag = "WIZARD";
+			break;
+		// Hexen
+		case 'FireDemon':
+			basetag = "FIREDEMON";
+			break;
+		case 'Demon1':
+		case 'Demon1Mash':
+		case 'Demon2':
+		case 'Demon2Mash':
+			basetag = "DEMON1";
+			break;
+		case 'Ettin':
+		case 'EttinMash':
+			basetag = "ETTIN";
+			break;
+		case 'Centaur':
+		case 'CentaurMash':
+			basetag = "CENTAUR";
+			break;
+		case 'CentaurLeader':
+			basetag = "SLAUGHTAUR";
+			break;
+		case 'Bishop':
+			basetag = "BISHOP";
+			break;
+		case 'IceGuy':
+			basetag = "ICEGUY";
+			break;
+		case 'Serpent':
+		case 'SerpentLeader':
+			basetag = "SERPENT";
+			break;
+		case 'Wraith':
+		case 'WraithBuried':
+			basetag = "WRAITH";
+			break;
+		case 'Dragon':
+			basetag = "DRAGON";
+			break;
+		case 'Korax':
+			basetag = "KORAX";
+			break;
+		case 'FighterBoss':
+			basetag = "FBOSS";
+			break;
+		case 'MageBoss':
+			basetag = "MBOSS";
+			break;
+		case 'ClericBoss':
+			basetag = "CBOSS";
+			break;
+		case 'Heresiarch':
+			basetag = "HERESIARCH";
+			break;
+		}
+		if ( basetag == "" ) return a.GetTag(defstr);
+		String funtag = "FN_"..basetag.."_FUN";
+		String lfuntag = StringTable.Localize(funtag,false);
+		if ( lfuntag != funtag ) return lfuntag;
+		String nfuntag = "FN_"..basetag.."_FUNN";
+		String lnfuntag = StringTable.Localize(nfuntag,false);
+		if ( lnfuntag == nfuntag ) return a.GetTag(defstr);
+		ntags = lnfuntag.ToInt();
+		return StringTable.Localize(String.Format("$FN_%s_FUN%d",basetag,Random[FunTags](1,ntags)));
+	}
+
+	// Apply full 3D knockback in a specific direction, useful for hitscan
+	static play void DoKnockback( Actor Victim, Vector3 HitDirection, double MomentumTransfer )
+	{
+		if ( !Victim )
+			return;
+		if ( !Victim.bSHOOTABLE && !Victim.bVULNERABLE )
+			return;
+		if ( Victim.bDONTTHRUST || (Victim.Mass >= Actor.LARGE_MASS) )
+			return;
+		Vector3 Momentum = HitDirection*MomentumTransfer;
+		if ( (Victim.pos.z <= Victim.floorz) || !Victim.TestMobjZ() )
+			Momentum.z = max(Momentum.z,.1*Momentum.length());
+		Momentum /= Thinker.TICRATE*max(50,Victim.Mass);
+		Victim.vel += Momentum;
+	}
+
+	// complete spherical and more accurate replacement of A_Explode
+	// 100% free of the buggery GZDoom's own splash damage has
+	static play void DoExplosion( Actor Source, double Damage, double MomentumTransfer, double ExplosionRadius, double FullDamageRadius = 0., int flags = 0, Name DamageType = '', Actor ignoreme = null )
+	{
+		// debug, display radius sphere
+		if ( swwm_explosiondebug )
+		{
+			let s = Actor.Spawn("RadiusDebugSphere",Source.pos);
+			s.Scale *= ExplosionRadius;
+			s.SetShade((Damage>0)?"Green":"Blue");
+			if ( FullDamageRadius > 0. )
+			{
+				let s = Actor.Spawn("RadiusDebugSphere",Source.pos);
+				s.Scale *= FullDamageRadius;
+				s.SetShade("Red");
+			}
+		}
+		if ( !(flags&DE_NOSPLASH) ) Source.CheckSplash(ExplosionRadius);
+		double brange = 1./(ExplosionRadius-FullDamageRadius);
+		Actor Instigator = (flags&DE_NOTMISSILE)?Source:Source.target;
+		BlockThingsIterator bi = BlockThingsIterator.Create(Source,ExplosionRadius*2);	// test with doubled radius, just to be sure
+		while ( bi.Next() )
+		{
+			Actor a = bi.Thing;
+			// early checks for self and ignored actor (usually the instigator)
+			if ( !a || (a == ignoreme) || (a == Source) )
+				continue;
+			// can't be affected
+			if ( !a.bSHOOTABLE && !a.bVULNERABLE )
+				continue;
+			// no blasting if no radius dmg (unless forced)
+			if ( a.bNORADIUSDMG && !Source.bFORCERADIUSDMG )
+				continue;
+			// check the DONTHARMCLASS/DONTHARMSPECIES flags
+			if ( !a.player && ((Source.bDONTHARMCLASS && (a.GetClass() == Source.GetClass())) || (Source.bDONTHARMSPECIES && (a.GetSpecies() == Source.GetSpecies()))) )
+				continue;
+			// can we see it
+			if ( !(flags&DE_THRUWALLS) && !Source.CheckSight(a,SF_IGNOREVISIBILITY|SF_IGNOREWATERBOUNDARY) )
+				continue;
+			// intersecting?
+			if ( !SWWMUtility.SphereIntersect(a,Source.pos,ExplosionRadius) )
+				continue;
+			// calculate factor
+			Vector3 dir = level.Vec3Diff(Source.pos,a.Vec3Offset(0,0,a.Height/2));
+			double dist = dir.length();
+			// intersecting, randomize direction
+			if ( dir.length() <= double.epsilon )
+			{
+				double ang = FRandom[DoBlast](0,360);
+				double pt = FRandom[DoBlast](-90,90);
+				dir = (cos(ang)*cos(pt),sin(ang)*cos(pt),-sin(pt));
+			}
+			dir /= dist;
+			dist = clamp(dist-FullDamageRadius,0,min(dist,ExplosionRadius));
+			double damagescale = 1.-clamp((dist-a.Radius)*brange,0.,1.);
+			double mm = MomentumTransfer*damagescale;
+			// no knockback if massive/unpushable
+			if ( (abs(mm) > 0.) && !a.bDORMANT && !a.bDONTTHRUST && (a.Mass < Actor.LARGE_MASS) )
+			{
+				Vector3 Momentum = dir*mm;
+				if ( (a.pos.z <= a.floorz) || !a.TestMobjZ() )
+					Momentum.z = max(Momentum.z,(flags&DE_EXTRAZTHRUST?.4:.1)*Momentum.length());
+				Momentum /= Thinker.TICRATE*max(50,a.Mass);	// prevent tiny things from getting yeeted at warp speed
+				a.vel += Momentum;
+				if ( (flags&DE_BLAST) && a.bCANBLAST && !a.bDONTBLAST ) a.bBLASTED = true;
+			}
+			// hit it
+			int dmg = int(Damage*damagescale);
+			if ( dmg <= 0 ) continue;	// no harm
+			int ndmg = a.DamageMobj(Source,Instigator,dmg,(DamageType=='')?Source.DamageType:DamageType,DMG_EXPLOSION,atan2(-dir.y,-dir.x));
+			if ( !(flags&DE_NOBLEED) ) a.TraceBleed((ndmg>0)?ndmg:dmg,Source);
+		}
+		// TODO destructible geometry support
+	}
+}
+
+Class RadiusDebugSphere : Actor
+{
+	Default
+	{
+		RenderStyle "AddStencil";
+		StencilColor "White";
+		Radius .1;
+		Height 0.;
+		+NOGRAVITY;
+		+NOINTERACTION;
+	}
+	States
+	{
+	Spawn:
+		XZW1 A 1 BRIGHT A_FadeOut();
+		Wait;
+	}
+}

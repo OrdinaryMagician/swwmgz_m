@@ -26,89 +26,6 @@ Class GoldShellCasing : RedShellCasing
 	}
 }
 
-Class SWWMDamageAccumulator : Thinker
-{
-	Actor victim, inflictor, source;
-	Array<Int> amounts;
-	int total;
-	Name type;
-	bool dontgib;
-	int flags;
-
-	override void Tick()
-	{
-		Super.Tick();
-		// so many damn safeguards in this
-		if ( !victim )
-		{
-			Destroy();
-			return;
-		}
-		int gibhealth = victim.GetGibHealth();
-		// おまえはもう死んでいる
-		if ( (victim.health-total <= gibhealth) && !dontgib )
-		{
-			// safeguard for inflictors that have somehow ceased to exist, which apparently STILL CAN HAPPEN
-			if ( inflictor ) inflictor.bEXTREMEDEATH = true;
-			else type = 'Extreme';
-		}
-		// make sure accumulation isn't reentrant
-		if ( inflictor && (inflictor is 'EvisceratorChunk') ) inflictor.bAMBUSH = true;
-		// 何？
-		for ( int i=0; i<amounts.Size(); i++ )
-		{
-			if ( !victim ) break;
-			victim.DamageMobj(inflictor,source,amounts[i],type,DMG_THRUSTLESS|flags);
-		}
-		// clean up
-		if ( inflictor )
-		{
-			if ( inflictor is 'EvisceratorChunk' ) inflictor.bAMBUSH = false;
-			inflictor.bEXTREMEDEATH = false;
-		}
-		Destroy();
-	}
-
-	static void Accumulate( Actor victim, int amount, Actor inflictor, Actor source, Name type, bool dontgib = false, int flags = 0 )
-	{
-		if ( !victim ) return;
-		let ti = ThinkerIterator.Create("SWWMDamageAccumulator",STAT_USER);
-		SWWMDamageAccumulator a, match = null;
-		while ( a = SWWMDamageAccumulator(ti.Next()) )
-		{
-			if ( a.victim != victim ) continue;
-			match = a;
-			break;
-		}
-		if ( !match )
-		{
-			match = new("SWWMDamageAccumulator");
-			match.ChangeStatNum(STAT_USER);
-			match.victim = victim;
-			match.amounts.Clear();
-		}
-		match.amounts.Push(amount);
-		match.total += amount;
-		match.inflictor = inflictor;
-		match.source = source;
-		match.type = type;
-		match.dontgib = dontgib;
-		match.flags = flags;
-	}
-
-	static clearscope int GetAmount( Actor victim )
-	{
-		let ti = ThinkerIterator.Create("SWWMDamageAccumulator",STAT_USER);
-		SWWMDamageAccumulator a, match = null;
-		while ( a = SWWMDamageAccumulator(ti.Next()) )
-		{
-			if ( a.victim != victim ) continue;
-			return a.total;
-		}
-		return 0;
-	}
-}
-
 Class SpreadgunTracer : LineTracer
 {
 	Actor ignoreme;
@@ -457,7 +374,7 @@ Class DragonBreathArm : Actor
 			let p = Spawn("DragonBreathPuff",pos);
 			p.alpha *= .6+.4*(ReactionTime/20.);
 			p.scale *= 3.5-2.5*(ReactionTime/20.);
-			if ( !(ReactionTime%3) )
+			if ( !(ReactionTime%5) )
 			{
 				let l = Spawn("PaletteLight",pos);
 				l.Args[3] = int(90+50*(ReactionTime/20.));
@@ -465,7 +382,7 @@ Class DragonBreathArm : Actor
 				l.target = p;
 			}
 			if ( !(ReactionTime%2) )
-				SWWMHandler.DoExplosion(self,1+(reactiontime/1.5),1000+200*reactiontime,150-6*reactiontime,ignoreme:bHITOWNER?null:target);
+				SWWMUtility.DoExplosion(self,1+(reactiontime*1.5),1000+200*reactiontime,150-6*reactiontime,ignoreme:bHITOWNER?null:target);
 			double spd = vel.length();
 			vel = (vel*.4+(FRandom[ExploS](-.2,.2),FRandom[ExploS](-.2,.2),FRandom[ExploS](-.2,.2))).unit()*spd;
 			Vector3 pvel = (FRandom[ExploS](-1,1),FRandom[ExploS](-1,1),FRandom[ExploS](-1,1)).unit()*FRandom[ExploS](1,5);
@@ -581,7 +498,7 @@ Class SaltImpact : Actor
 	{
 		Super.PostBeginPlay();
 		A_AlertMonsters(6000);
-		SWWMHandler.DoExplosion(self,25+special2*5,15000,100,40);
+		SWWMUtility.DoExplosion(self,25+special2*5,15000,100,40);
 		A_QuakeEx(3,3,3,10,0,250,"",QF_RELATIVE|QF_SCALEDOWN,falloff:150,rollintensity:0.2);
 		A_StartSound("spreadgun/salt",CHAN_VOICE,attenuation:.35);
 		A_SprayDecal("ShockMarkSmall",-172);
@@ -691,7 +608,7 @@ Class SaltBeam : Actor
 			if ( args[1] ) BusterWall.Bust(t.Results,85+Accuracy*10,target,x,t.Results.HitPos.z);
 			if ( t.Results.HitType == TRACE_HitActor )
 			{
-				SWWMHandler.DoKnockback(t.Results.HitActor,x,25000);
+				SWWMUtility.DoKnockback(t.Results.HitActor,x,25000);
 				t.Results.HitActor.DamageMobj(self,target,60+Accuracy*5,'Salt',DMG_THRUSTLESS);
 			}
 			Vector3 norm = -x;
@@ -761,7 +678,7 @@ Class SaltBeam : Actor
 		if ( isFrozen() ) return;
 		A_FadeOut(.04);
 		if ( Random[Spreadgun](-2,args[2]/10) == 0 )
-			SWWMHandler.DoExplosion(self,5+Accuracy,5000,32,ignoreme:target);
+			SWWMUtility.DoExplosion(self,5+Accuracy,5000,32,ignoreme:target);
 		if ( ((special2%5) || args[2]) && !special1 ) SpreadOut();
 		args[2]++;
 		if ( !CheckNoDelay() || (tics == -1) ) return;
@@ -1423,7 +1340,7 @@ Class TheBall : Actor
 			}
 			crit = true;
 		}
-		SWWMHandler.DoKnockback(victim,vel.unit(),slamforce);
+		SWWMUtility.DoKnockback(victim,vel.unit(),slamforce);
 		bool bleeds = (victim && !victim.bINVULNERABLE && !victim.bNOBLOOD && is_schutt);
 		int newdmg = victim.DamageMobj(self,target,dmg,'Concussion',crit?(DMG_THRUSTLESS|DMG_FOILINVUL):DMG_THRUSTLESS);	// crits ignore invulnerability
 		Vector3 dir = -vel.unit();
@@ -1450,7 +1367,7 @@ Class TheBall : Actor
 			}
 		}
 		if ( crit )
-			SWWMHandler.DoExplosion(self,dmg/2,25000,150,80,ignoreme:target);
+			SWWMUtility.DoExplosion(self,dmg/2,25000,150,80,ignoreme:target);
 		// only rip shootables
 		if ( (slamforce > girth) && is_schutt )
 		{
@@ -1478,7 +1395,19 @@ Class TheBall : Actor
 		if ( InStateSequence(CurState,ResolveState("Death")) )
 		{
 			deadtimer++;
-			if ( deadtimer > 300 ) A_FadeOut(0.05);
+			if ( deadtimer > 300 )
+			{
+				let numpt = Random[Spreadgun](3,6);
+				for ( int i=0; i<numpt; i++ )
+				{
+					Vector3 pvel = (FRandom[Spreadgun](-1,1),FRandom[Spreadgun](-1,1),FRandom[Spreadgun](-1,1)).unit()*FRandom[Spreadgun](1,8);
+					let s = Spawn("SWWMSmallSmoke",pos);
+					s.scale *= 3.;
+					s.alpha *= .2;
+					s.vel = pvel;
+				}
+				Destroy();
+			}
 			return;
 		}
 		heat -= 0.004+0.0004*vel.length();
@@ -1656,7 +1585,7 @@ Class GoldenImpact : Actor
 	{
 		Super.PostBeginPlay();
 		A_AlertMonsters(40000);
-		SWWMHandler.DoExplosion(self,7777,40000,600,500,DE_EXTRAZTHRUST);
+		SWWMUtility.DoExplosion(self,7777,40000,600,500,DE_EXTRAZTHRUST);
 		A_QuakeEx(9,9,9,40,0,5000,"",QF_RELATIVE|QF_SCALEDOWN,falloff:500,rollintensity:1.5);
 		A_StartSound("spreadgun/goldexpl",CHAN_VOICE,attenuation:.3);
 		A_StartSound("spreadgun/goldexpl",CHAN_WEAPON,attenuation:.15);
@@ -1783,7 +1712,7 @@ Class GoldenSubImpact : Actor
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
-		SWWMHandler.DoExplosion(self,777,30000,400,300,DE_EXTRAZTHRUST);
+		SWWMUtility.DoExplosion(self,777,30000,400,300,DE_EXTRAZTHRUST);
 		A_QuakeEx(7,7,7,20,0,2000,"",QF_RELATIVE|QF_SCALEDOWN,falloff:200,rollintensity:.8);
 		A_SprayDecal("BigScorch",-172);
 		Scale *= FRandom[ExploS](0.8,1.1);
@@ -1908,7 +1837,7 @@ Class GoldenSubSubImpact : Actor
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
-		SWWMHandler.DoExplosion(self,77,20000,200,100,DE_EXTRAZTHRUST);
+		SWWMUtility.DoExplosion(self,77,20000,200,100,DE_EXTRAZTHRUST);
 		A_QuakeEx(4,4,4,15,0,1000,"",QF_RELATIVE|QF_SCALEDOWN,falloff:100,rollintensity:.4);
 		A_SprayDecal("Scorch",-172);
 		Scale *= FRandom[ExploS](0.8,1.1);
@@ -2128,7 +2057,7 @@ Class Spreadgun : SWWMWeapon
 		{
 			int realdmg = dmg?dmg:t.HitList[i].HitDamage;
 			SWWMDamageAccumulator.Accumulate(t.HitList[i].HitActor,realdmg,invoker,self,'shot',!large);
-			SWWMHandler.DoKnockback(t.HitList[i].HitActor,t.HitList[i].x+(0,0,0.025),mm*FRandom[Spreadgun](0.4,1.2));
+			SWWMUtility.DoKnockback(t.HitList[i].HitActor,t.HitList[i].x+(0,0,0.025),mm*FRandom[Spreadgun](0.4,1.2));
 			if ( t.HitList[i].HitActor.bNOBLOOD || t.HitList[i].HitActor.bINVULNERABLE )
 			{
 				let p = Spawn(impact,t.HitList[i].HitLocation);
@@ -2233,10 +2162,10 @@ Class Spreadgun : SWWMWeapon
 					s.alpha *= .4;
 					s.vel += vel*.5+x*FRandom[Spreadgun](4.,8.)+y*FRandom[Spreadgun](-1,1)+z*FRandom[Spreadgun](-1,1);
 				}
-				SWWMHandler.DoKnockback(self,-x,25000.);
+				SWWMUtility.DoKnockback(self,-x,25000.);
 				break;
 			case 2:
-				for ( int j=0; j<9; j++ )
+				for ( int j=0; j<5; j++ )
 				{
 					a = FRandom[Spreadgun](0,360);
 					s = FRandom[Spreadgun](0,.2);
@@ -2270,7 +2199,7 @@ Class Spreadgun : SWWMWeapon
 					s.alpha *= .4;
 					s.vel += vel*.5+x*FRandom[Spreadgun](4.,8.)+y*FRandom[Spreadgun](-2,2)+z*FRandom[Spreadgun](-2,2);
 				}
-				SWWMHandler.DoKnockback(self,-x,13000.);
+				SWWMUtility.DoKnockback(self,-x,13000.);
 				break;
 			case 3:
 				for ( int j=0; j<8; j++ )
@@ -2306,7 +2235,7 @@ Class Spreadgun : SWWMWeapon
 					s.alpha *= .4;
 					s.vel += vel*.5+x*FRandom[Spreadgun](4.,8.)+y*FRandom[Spreadgun](-2,2)+z*FRandom[Spreadgun](-2,2);
 				}
-				SWWMHandler.DoKnockback(self,-x,23000.);
+				SWWMUtility.DoKnockback(self,-x,23000.);
 				break;
 			case 4:
 				for ( int j=0; j<10; j++ )
@@ -2344,7 +2273,7 @@ Class Spreadgun : SWWMWeapon
 					s.alpha *= .4;
 					s.vel += vel*.5+x*FRandom[Spreadgun](4.,12.)+y*FRandom[Spreadgun](-2,2)+z*FRandom[Spreadgun](-2,2);
 				}
-				SWWMHandler.DoKnockback(self,-x,14000.);
+				SWWMUtility.DoKnockback(self,-x,14000.);
 				break;
 			case 5:
 				a = FRandom[Spreadgun](0,360);
@@ -2378,7 +2307,7 @@ Class Spreadgun : SWWMWeapon
 					s.alpha *= .4;
 					s.vel += vel*.5+x*FRandom[Spreadgun](4.,8.)+y*FRandom[Spreadgun](-1,1)+z*FRandom[Spreadgun](-1,1);
 				}
-				SWWMHandler.DoKnockback(self,-x,9500.);
+				SWWMUtility.DoKnockback(self,-x,9500.);
 				break;
 			case 6:
 				a = FRandom[Spreadgun](0,360);
@@ -2443,7 +2372,7 @@ Class Spreadgun : SWWMWeapon
 					s.bAMBUSH = true;
 					s.vel += vel*.5+x*FRandom[Spreadgun](1.,20.)+y*FRandom[Spreadgun](-2,2)+z*FRandom[Spreadgun](-2,2);
 				}
-				SWWMHandler.DoKnockback(self,-x,30000.);
+				SWWMUtility.DoKnockback(self,-x,30000.);
 				break;
 			default:
 				st = new("SpreadgunTracer");
@@ -2483,7 +2412,7 @@ Class Spreadgun : SWWMWeapon
 					s.alpha *= .4;
 					s.vel += vel*.5+x*FRandom[Spreadgun](4.,8.)+y*FRandom[Spreadgun](-2,2)+z*FRandom[Spreadgun](-2,2);
 				}
-				SWWMHandler.DoKnockback(self,-x,20000.);
+				SWWMUtility.DoKnockback(self,-x,20000.);
 				break;
 			}
 			break;

@@ -1269,6 +1269,7 @@ Class CompanionLamp : Actor
 	Vector3 Trail;
 	Array<LampMoth> moff;
 	Actor parent;
+	bool justteleport;
 
 	Default
 	{
@@ -1383,10 +1384,23 @@ Class CompanionLamp : Actor
 			if ( foundspot && (i > 45) ) break;
 		}
 		Vector3 diff = level.Vec3Diff(pos,parent.pos);
-		if ( diff.length() > 400 )
+		if ( (diff.length() > 400) || justteleport )
 		{
+			Vector3 rel = level.Vec3Diff(pos,trail);
+			justteleport = false;
 			Actor f = Spawn("SWWMItemFog",pos);
 			f.A_StartSound("lamp/disappear",CHAN_VOICE);
+			// carry over the moths
+			for ( int i=0; i<moff.Size(); i++ )
+			{
+				Vector3 whereto = level.Vec3Offset(moff[i].pos,rel);
+				if ( !level.IsPointInLevel(whereto) )
+					continue;
+				Vector3 oldp = moff[i].pos;
+				moff[i].SetOrigin(whereto,false);
+				if ( !moff[i].TestMobjLocation() )
+					moff[i].SetOrigin(oldp,false);
+			}
 			SetOrigin(trail,false);
 			angle = AngleTo(parent);
 			vel *= 0.;

@@ -344,7 +344,9 @@ Class SWWMHealth : Inventory abstract
 // Base casing classes
 Class SWWMCasing : Actor abstract
 {
-	int deadtimer, numbounces;
+	SWWMCasing prevcasing, nextcasing;
+	bool killme;
+	int numbounces;
 	double pitchvel, anglevel;
 	double heat;
 
@@ -372,25 +374,31 @@ Class SWWMCasing : Actor abstract
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
-		deadtimer = Random[Junk](-30,30);
 		pitchvel = FRandom[Junk](10,30)*RandomPick[Junk](-1,1);
 		anglevel = FRandom[Junk](10,30)*RandomPick[Junk](-1,1);
 		heat = 1.0;
+		SWWMHandler.QueueCasing(self);
+	}
+	override void OnDestroy()
+	{
+		SWWMHandler.DeQueueCasing(self);
+		Super.OnDestroy();
 	}
 	override void Tick()
 	{
 		Super.Tick();
 		if ( isFrozen() ) return;
-		if ( InStateSequence(CurState,ResolveState("Death")) )
+		if ( killme ) A_FadeOut(.01);
+		if ( waterlevel > 0 )
 		{
-			deadtimer++;
-			if ( deadtimer > 300 ) A_FadeOut(0.05);
-			return;
+			vel.xy *= .98;
+			anglevel *= .98;
+			pitchvel *= .98;
 		}
-		heat -= 0.05;
 		if ( heat <= 0 ) return;
 		let s = Spawn("SWWMSmallSmoke",pos);
 		s.alpha *= heat;
+		heat -= 0.05;
 	}
 	States
 	{
@@ -572,7 +580,7 @@ Class BigPunchSplash : Actor
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
-		SWWMHandler.DoExplosion(self,special1,40000,120,60,ignoreme:target);
+		SWWMUtility.DoExplosion(self,special1,40000,120,60,ignoreme:target);
 		Destroy();
 	}
 }
@@ -736,14 +744,6 @@ Class ParryField : Actor
 		Height 40;
 	}
 
-	static bool ValidMissile( Actor a )
-	{
-		// fuuuuuuuuuuuuck why can't you just subclass them all from one base class, also wtf hexen, what's with all these things having +MISSILE
-		if ( (a is 'Rock1') || (a is 'Rock2') || (a is 'Rock3') || (a is 'Dirt1') || (a is 'Dirt2') || (a is 'Dirt3') || (a is 'Dirt4') || (a is 'Dirt5') || (a is 'Dirt6') || (a is 'GlassShard') || (a is 'PotteryBit') || (a is 'CorpseBloodDrip') || (a is 'Leaf1') || (a is 'HWaterDrip') || (a is 'IceGuyWisp1') || (a is 'WraithFX3') || (a is 'WraithFX4') || (a is 'Bat') || (a is 'SorcBall') )
-			return false;
-		return true;
-	}
-
 	override void Tick()
 	{
 		if ( !master )
@@ -760,10 +760,9 @@ Class ParryField : Actor
 		Actor a;
 		while ( a = Actor(ti.Next()) )
 		{
-			if ( !((a.bMISSILE && (a.target != master) && ValidMissile(a)) || a.bSKULLFLY) || a.bTHRUACTORS || (level.Vec3Diff(a.pos,Vec3Offset(0,0,20)).length() > 80) ) continue;
+			if ( !((a.bMISSILE && !a.IsZeroDamage() && (a.target != master)) || a.bSKULLFLY) || a.bTHRUACTORS || (level.Vec3Diff(a.pos,Vec3Offset(0,0,20)).length() > 80) ) continue;
 			Vector3 vdir = a.vel;
 			Vector3 dir = level.Vec3Diff(master.Vec2OffsetZ(0,0,pos.z),a.pos).unit();
-			if ( dir dot vdir > 0 ) continue;	// already moving away
 			if ( a.bMISSILE )
 			{
 				// deflect directly to target
@@ -1149,7 +1148,7 @@ Class SWWMWeapon : Weapon abstract
 			bool bloodless = true;
 			double diff = deltaangle(self.angle,AngleTo(d.HitActor));
 			self.angle += clamp(diff,-5.,5.);
-			SWWMHandler.DoKnockback(d.HitActor,d.HitDir+(0,0,.2),dmg*2000);
+			SWWMUtility.DoKnockback(d.HitActor,d.HitDir+(0,0,.2),dmg*2000);
 			if ( raging )
 			{
 				invoker.bEXTREMEDEATH = true;

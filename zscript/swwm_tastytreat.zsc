@@ -111,7 +111,7 @@ Class CandyBeam : Actor
 		}
 		for ( int i=0; i<t.hitlist.Size(); i++ )
 		{
-			SWWMHandler.DoKnockback(t.hitlist[i].hitactor,t.hitlist[i].x,12000);
+			SWWMUtility.DoKnockback(t.hitlist[i].hitactor,t.hitlist[i].x,12000);
 			t.hitlist[i].hitactor.DamageMobj(self,target,GetMissileDamage(0,0),'Explodium',DMG_THRUSTLESS);
 		}
 		Vector3 normal = -t.Results.HitVector, dir = t.Results.HitVector;
@@ -186,7 +186,7 @@ Class CandyBeam : Actor
 		Obituary "$O_CANDYGUN";
 		RenderStyle "Add";
 		Alpha 0.4;
-		DamageFunction 25;
+		DamageFunction 30;
 		ReactionTime 12;
 		Radius 0.1;
 		Height 0;
@@ -250,7 +250,7 @@ Class CandyPop : Actor
 	Spawn:
 		BLPF B 3 NoDelay
 		{
-			SWWMHandler.DoExplosion(self,200,60000,120,40);
+			SWWMUtility.DoExplosion(self,500,60000,250,60);
 			Scale *= FRandom[ExploS](0.6,1.8);
 			Scale.x *= RandomPick[ExploS](-1,1);
 			Scale.y *= RandomPick[ExploS](-1,1);
@@ -314,7 +314,7 @@ Class TinyCandyPop : CandyPop
 	Spawn:
 		BLPF B 3 NoDelay
 		{
-			SWWMHandler.DoExplosion(self,60,32000,80,20);
+			SWWMUtility.DoExplosion(self,120,32000,100,20);
 			Scale *= FRandom[ExploS](0.6,1.8);
 			Scale.x *= RandomPick[ExploS](-1,1);
 			Scale.y *= RandomPick[ExploS](-1,1);
@@ -359,7 +359,7 @@ Class CandyMagArm : Actor
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
-		reactiontime = Random[ExploS](4,7);
+		reactiontime = Random[ExploS](6,8);
 		double ang, pt;
 		ang = FRandom[ExploS](0,360);
 		pt = FRandom[ExploS](-90,90);
@@ -372,7 +372,7 @@ Class CandyMagArm : Actor
 		{
 			A_CountDown();
 			Spawn("CandyMagTrail",pos);
-			SWWMHandler.DoExplosion(self,80+reactiontime*7,3000+800*reactiontime,50+6*reactiontime);
+			SWWMUtility.DoExplosion(self,100+reactiontime*8,3000+800*reactiontime,80+6*reactiontime);
 			double spd = vel.length();
 			vel = (vel*.1+(FRandom[ExploS](-.7,.7),FRandom[ExploS](-.7,.7),FRandom[ExploS](-.7,.7))).unit()*spd;
 			Vector3 pvel = (FRandom[ExploS](-1,1),FRandom[ExploS](-1,1),FRandom[ExploS](-1,1)).unit()*FRandom[ExploS](1,5);
@@ -424,7 +424,7 @@ Class CandyMagTrailBig : CandyMagTrail
 {
 	Default
 	{
-		Scale 3.;
+		Scale 4.;
 	}
 	States
 	{
@@ -439,7 +439,8 @@ Class CandyMagArmBig : CandyMagArm
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
-		vel *= 1.4;
+		reactiontime = Random[ExploS](10,16);
+		vel *= FRandom[ExploS](.8,1.5);
 	}
 	States
 	{
@@ -448,7 +449,7 @@ Class CandyMagArmBig : CandyMagArm
 		{
 			ReactionTime--;
 			Spawn("CandyMagTrailBig",pos);
-			SWWMHandler.DoExplosion(self,120+reactiontime*10,3000+900*reactiontime,100+8*reactiontime);
+			SWWMUtility.DoExplosion(self,200+reactiontime*20,3000+900*reactiontime,200+16*reactiontime);
 			double spd = vel.length();
 			vel = (vel*.1+(FRandom[ExploS](-.5,.5),FRandom[ExploS](-.5,.5),FRandom[ExploS](-.5,.5))).unit()*spd;
 			Vector3 pvel = (FRandom[ExploS](-1,1),FRandom[ExploS](-1,1),FRandom[ExploS](-1,1)).unit()*FRandom[ExploS](1,5);
@@ -527,7 +528,7 @@ Class CandyGunProj : Actor
 		A_SetRenderStyle(1.,STYLE_Add);
 		Scale *= 6.+.2*special1;
 		A_AlertMonsters(40000);
-		SWWMHandler.DoExplosion(self,4000+700*special1,80000+15000*special1,400+20*special1,250,DE_EXTRAZTHRUST);
+		SWWMUtility.DoExplosion(self,4000+900*special1,80000+15000*special1,300+30*special1,200,DE_EXTRAZTHRUST);
 		A_QuakeEx(9,9,9,70,0,1500+100*special1,"",QF_RELATIVE|QF_SCALEDOWN,falloff:1200,rollintensity:2.);
 		A_StartSound("candygun/gunhit",CHAN_VOICE,attenuation:.24);
 		A_StartSound("candygun/gunhit",CHAN_WEAPON,attenuation:.12);
@@ -593,7 +594,12 @@ Class CandyGunProj : Actor
 				s.angle = ang;
 				s.pitch = pt;
 				s.special2 = 1;
-				s.ReactionTime += Random[ExploS](-12,32)+(25-frame)/2;
+				s.ReactionTime += Random[ExploS](-12,48)+(25-frame)/2;
+			}
+			if ( (frame < 6) && (Random[ExploS](-frame,5) > 0) )
+			{
+				let s = Spawn("CandyMagArmBig",pos);
+				s.target = target;
 			}
 		}
 		Stop;
@@ -637,7 +643,7 @@ Class CandyMagProj : Actor
 		A_SetRenderStyle(1.,STYLE_Add);
 		Scale *= 3.+.2*special1;
 		A_AlertMonsters(20000);
-		SWWMHandler.DoExplosion(self,800+700*special1,60000+15000*special1,200+15*special1,100,DE_EXTRAZTHRUST);
+		SWWMUtility.DoExplosion(self,1000+900*special1,60000+15000*special1,200+20*special1,100,DE_EXTRAZTHRUST);
 		A_QuakeEx(9,9,9,30,0,500+80*special1,"",QF_RELATIVE|QF_SCALEDOWN,falloff:500,rollintensity:2.);
 		A_StartSound("candygun/maghit",CHAN_VOICE,attenuation:.24);
 		A_StartSound("candygun/maghit",CHAN_WEAPON,attenuation:.12);
@@ -717,7 +723,7 @@ Class CandyBulletImpact : Actor
 		Obituary "$O_CANDYGUN";
 		DamageType "Explodium";
 		RenderStyle "Add";
-		Scale 3.5;
+		Scale 2.5;
 		+NOGRAVITY;
 		+NOBLOCKMAP;
 		+NODAMAGETHRUST;
@@ -731,7 +737,7 @@ Class CandyBulletImpact : Actor
 	{
 		Super.PostBeginPlay();
 		A_AlertMonsters(9000);
-		SWWMHandler.DoExplosion(self,700,48000,200,80,DE_EXTRAZTHRUST);
+		SWWMUtility.DoExplosion(self,1200,48000,250,80,DE_EXTRAZTHRUST);
 		A_QuakeEx(6,6,6,15,0,300,"",QF_RELATIVE|QF_SCALEDOWN,falloff:200,rollintensity:0.2);
 		A_StartSound("candygun/hit",CHAN_VOICE,attenuation:.25);
 		A_StartSound("candygun/hit",CHAN_WEAPON,attenuation:.5);
@@ -826,12 +832,12 @@ Class CandyRing3 : CandyRing
 {
 	Default
 	{
-		Scale 5.;
+		Scale 4.;
 	}
 	States
 	{
 	Spawn:
-		XRG5 ABCDEFGHIJKLMNOPQRSTUVWX 1 Bright A_SetScale(scale.x*1.03);
+		XRG5 ABCDEFGHIJKLMNOPQRSTUVWX 1 Bright A_SetScale(scale.x*1.08);
 		Stop;
 	}
 }
@@ -900,7 +906,14 @@ Class CandyGun : SWWMWeapon
 		if ( chambered ) Screen.DrawText(TewiFont,Font.CR_FIRE,bx-22,by-21,"⁺¹",DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true,DTA_Spacing,-1);
 		Screen.DrawText(TewiFont,Font.CR_FIRE,bx-19,by-14,String.Format("%d",max(clipcount,0)),DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
 		int cx = (Ammo1.Amount>9)?48:45;
-		Screen.DrawText(TewiFont,Font.CR_FIRE,bx-cx,by-18,String.Format("%d",Ammo1.Amount),DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
+		int sb = Owner.CountInv("CandyGunBullets");
+		if ( sb > 0 )
+		{
+			int cbx = (sb>9)?50:47;
+			Screen.DrawText(TewiFont,Font.CR_FIRE,bx-cbx,by-21,String.Format("⁺%s",SWWMUtility.SuperscriptNum(sb)),DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true,DTA_Spacing,-1);
+			Screen.DrawText(TewiFont,Font.CR_FIRE,bx-cx,by-14,String.Format("%d",Ammo1.Amount),DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
+		}
+		else Screen.DrawText(TewiFont,Font.CR_FIRE,bx-cx,by-18,String.Format("%d",Ammo1.Amount),DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
 		Screen.DrawText(TewiFont,Font.CR_FIRE,bx-37,by-40,String.Format("%d",Ammo2.Amount),DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true);
 	}
 
@@ -920,7 +933,7 @@ Class CandyGun : SWWMWeapon
 		A_PlayerFire();
 		Vector3 x, y, z, x2, y2, z2;
 		[x, y, z] = swwm_CoordUtil.GetAxes(pitch,angle,roll);
-		SWWMHandler.DoKnockback(self,-x,18000.);
+		SWWMUtility.DoKnockback(self,-x,18000.);
 		Vector3 origin = level.Vec3Offset(Vec2OffsetZ(0,0,player.viewz),10*x+3*y-2*z);
 		double a = FRandom[Spread](0,360), s = FRandom[Spread](0,.005);
 		[x2, y2, z2] = swwm_CoordUtil.GetAxes(BulletSlope(),angle,roll);
@@ -930,8 +943,8 @@ Class CandyGun : SWWMWeapon
 		SWWMBulletTrail.DoTrail(self,origin,dir,10000,2);
 		if ( d.HitType == TRACE_HitActor )
 		{
-			int dmg = 900;
-			SWWMHandler.DoKnockback(d.HitActor,d.HitDir,72000);
+			int dmg = 500;
+			SWWMUtility.DoKnockback(d.HitActor,d.HitDir,72000);
 			dmg = d.HitActor.DamageMobj(invoker,self,dmg,'Explodium',DMG_USEANGLE|DMG_THRUSTLESS|DMG_FOILINVUL,atan2(d.HitDir.y,d.HitDir.x));
 			if ( d.HitActor.bNOBLOOD )
 			{
@@ -1054,8 +1067,9 @@ Class CandyGun : SWWMWeapon
 		int dropamt = invoker.clipcount-maxgiveamt;
 		if ( dropamt > 0 ) ma.CreateTossable(dropamt);
 		ma.Amount = min(ma.MaxAmount,ma.Amount+invoker.clipcount);
-		if ( CheckLocalView() ) for ( int i=0; i<(invoker.clipcount-dropamt); i++ ) ma.PrintPickupMessage(true,ma.PickupMessage());
-		if ( (invoker.clipcount-dropamt) > 0 ) ma.PlayPickupSound(self);
+		ma.MagFill();
+		if ( CheckLocalView() ) for ( int i=0; i<min(ma.Amount,invoker.clipcount-dropamt); i++ ) ma.PrintPickupMessage(true,ma.PickupMessage());
+		if ( min(ma.Amount,invoker.clipcount-dropamt) > 0 ) ma.PlayPickupSound(self);
 		invoker.clipcount = 0;
 	}
 
@@ -1075,14 +1089,14 @@ Class CandyGun : SWWMWeapon
 	override bool CheckAmmo( int fireMode, bool autoSwitch, bool requireAmmo, int ammocount )
 	{
 		if ( sv_infiniteammo || Owner.FindInventory('PowerInfiniteAmmo',true) ) return true;
-		if ( fireMode == PrimaryFire ) return (chambered || (clipcount > 0) || (Ammo1.Amount > 0));
-		if ( fireMode == AltFire ) return (Ammo1.Amount > 0);
+		if ( fireMode == PrimaryFire ) return (chambered || (clipcount > 0) || (Ammo1.Amount > 0) || (Owner.CountInv("CandyGunBullets") > 0));
+		if ( fireMode == AltFire ) return ((Ammo1.Amount > 0) || (Owner.CountInv("CandyGunBullets") > 0));
 		return Super.CheckAmmo(firemode,autoswitch,requireammo,ammocount);
 	}
 
 	override bool ReportHUDAmmo()
 	{
-		if ( chambered || (clipcount > 0) ) return true;
+		if ( chambered || (clipcount > 0) || (Owner.CountInv("CandyGunBullets") > 0) ) return true;
 		if ( Ammo1.Amount <= 0 ) return false;
 		return Super.ReportHUDAmmo();
 	}
@@ -1119,13 +1133,13 @@ Class CandyGun : SWWMWeapon
 	Ready:
 		XZW2 A 1
 		{
-			if ( (invoker.clipcount <= 0) && !invoker.chambered && (invoker.Ammo1.Amount > 0) ) player.SetPSprite(PSP_WEAPON,ResolveState("Reload"));
+			if ( (invoker.clipcount <= 0) && !invoker.chambered && ((invoker.Ammo1.Amount > 0) || (CountInv("CandyGunBullets") > 0)) ) player.SetPSprite(PSP_WEAPON,ResolveState("Reload"));
 			else if ( (invoker.clipcount > 0) && !invoker.chambered ) player.SetPSprite(PSP_WEAPON,ResolveState("Slide"));
 			else
 			{
 				int flg = WRF_ALLOWZOOM|WRF_ALLOWUSER1;
 				if ( sv_infiniteammo || FindInventory('PowerInfiniteAmmo',true) || (invoker.Ammo1.Amount > 0) || invoker.chambered ) flg |= WRF_ALLOWRELOAD;
-				if ( (invoker.Ammo1.Amount <= 0) && !sv_infiniteammo && !FindInventory('PowerInfiniteAmmo',true) ) flg |= WRF_NOSECONDARY;
+				if ( (invoker.Ammo1.Amount <= 0) && (CountInv("CandyGunBullets") <= 0) && !sv_infiniteammo && !FindInventory('PowerInfiniteAmmo',true) ) flg |= WRF_NOSECONDARY;
 				A_WeaponReady(flg);
 				if ( player.cmd.buttons&(BT_ATTACK|BT_ALTATTACK) )
 					invoker.CheckAmmo(EitherFire,true);
@@ -1148,7 +1162,7 @@ Class CandyGun : SWWMWeapon
 		XZW5 Q 1;
 		XZW5 R 1
 		{
-			if ( player.cmd.buttons&BT_ATTACK && (((invoker.Ammo1.Amount > 0) && (invoker.Ammo2.Amount > 0)) || sv_infiniteammo || FindInventory('PowerInfiniteAmmo',true)) )
+			if ( player.cmd.buttons&BT_ATTACK && ((((invoker.Ammo1.Amount > 0) || (CountInv("CandyGunBullets") > 0)) && (invoker.Ammo2.Amount > 0)) || sv_infiniteammo || FindInventory('PowerInfiniteAmmo',true)) )
 				player.SetPSprite(PSP_WEAPON,ResolveState("SpecialFire"));
 		}
 		XZW5 STUVWXYZ 1;
@@ -1187,15 +1201,26 @@ Class CandyGun : SWWMWeapon
 		XZW1 B 0
 		{
 			invoker.PlayUpSound(self);
-			if ( !sv_infiniteammo && !FindInventory('PowerInfiniteAmmo',true) )
+			if ( sv_infiniteammo || FindInventory('PowerInfiniteAmmo',true) )
+				invoker.clipcount = invoker.default.clipcount;
+			else if ( invoker.Ammo1.Amount <= 0 )
+			{
+				MagAmmo sb = MagAmmo(FindInventory("CandyGunBullets"));
+				int takeamt = min(sb.Amount,sb.ClipSize);
+				invoker.clipcount = takeamt;
+				sb.Amount -= takeamt;
+			}
+			else
+			{
 				invoker.Ammo1.Amount = max(0,invoker.Ammo1.Amount-1);
-			invoker.clipcount = invoker.default.clipcount;
+				invoker.clipcount = invoker.default.clipcount;
+			}
 		}
 		Goto Select;
 	Reload:
 		XZW2 A 1
 		{
-			if ( (invoker.Ammo1.Amount <= 0) || (invoker.clipcount >= invoker.default.clipcount) ) return ResolveState("CheckBullet");
+			if ( ((invoker.Ammo1.Amount <= 0) && (CountInv("CandyGunBullets") <= 0)) || (invoker.clipcount >= invoker.default.clipcount) ) return ResolveState("CheckBullet");
 			A_PlayerReload();
 			if ( invoker.clipcount <= 0 ) return ResolveState("ReloadEmpty");
 			return ResolveState(null);
@@ -1225,9 +1250,20 @@ Class CandyGun : SWWMWeapon
 		XZW4 R 1
 		{
 			A_StartSound("explodium/jamitin",CHAN_WEAPON,CHANF_OVERLAP);
-			invoker.clipcount = invoker.default.clipcount;
-			if ( !sv_infiniteammo && !FindInventory('PowerInfiniteAmmo',true) )
+			if ( sv_infiniteammo || FindInventory('PowerInfiniteAmmo',true) )
+				invoker.clipcount = invoker.default.clipcount;
+			else if ( invoker.Ammo1.Amount <= 0 )
+			{
+				MagAmmo sb = MagAmmo(FindInventory("CandyGunBullets"));
+				int takeamt = min(sb.Amount,sb.ClipSize);
+				invoker.clipcount = takeamt;
+				sb.Amount -= takeamt;
+			}
+			else
+			{
 				invoker.Ammo1.Amount = max(0,invoker.Ammo1.Amount-1);
+				invoker.clipcount = invoker.default.clipcount;
+			}
 		}
 		XZW4 STUV 1;
 		XZW2 A 1 A_JumpIf(!invoker.chambered,"Slide");

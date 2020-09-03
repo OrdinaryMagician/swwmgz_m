@@ -84,7 +84,7 @@ Class EvisceratorChunk : Actor
 		Radius 2;
 		Height 2;
 		Speed 50;
-		DamageFunction int(clamp((vel.length()-6)*.2+max(0,1.-lifetime)*5.,0,12));
+		DamageFunction int(clamp((vel.length()-6)*.15+max(0,1.-lifetime)*3.,0,10));
 		DamageType 'shot';
 		BounceFactor 1.0;
 		WallBounceFactor 1.0;
@@ -237,7 +237,7 @@ Class EvisceratorChunk : Actor
 		lasthit = victim;
 		// don't knock back if already dead
 		int oldamt = SWWMDamageAccumulator.GetAmount(victim);
-		if ( victim.health-oldamt > 0 ) SWWMHandler.DoKnockback(victim,vel.unit(),12000);
+		if ( victim.health-oldamt > 0 ) SWWMUtility.DoKnockback(victim,vel.unit(),12000);
 		// gather damage
 		SWWMDamageAccumulator.Accumulate(victim,GetMissileDamage(0,0),self,target,damagetype);
 		int amt = SWWMDamageAccumulator.GetAmount(victim);
@@ -359,7 +359,7 @@ Class EvisceratorProj : Actor
 		A_SprayDecal("BigScorch",50);
 		A_NoGravity();
 		A_SetScale(3.5);
-		SWWMHandler.DoExplosion(self,150,120000,200,80);
+		SWWMUtility.DoExplosion(self,150,120000,200,80);
 		A_QuakeEx(6,6,6,20,0,1200,"",QF_RELATIVE|QF_SCALEDOWN,falloff:300,rollIntensity:.7);
 		A_StartSound("eviscerator/shell",CHAN_WEAPON,attenuation:.5);
 		A_StartSound("eviscerator/shell",CHAN_VOICE,attenuation:.3);
@@ -612,7 +612,7 @@ Class Eviscerator : SWWMWeapon
 		Vector3 x, y, z, x2, y2, z2, dir, origin;
 		double a, s;
 		[x, y, z] = swwm_CoordUtil.GetAxes(pitch,angle,roll);
-		SWWMHandler.DoKnockback(self,-x,25000.);
+		SWWMUtility.DoKnockback(self,-x,25000.);
 		[x2, y2, z2] = swwm_CoordUtil.GetAxes(BulletSlope(),angle,roll);
 		origin = level.Vec3Offset(Vec2OffsetZ(0,0,player.viewz),10*x+3*y-5*z);
 		for ( int i=0; i<40; i++ )
@@ -669,7 +669,7 @@ Class Eviscerator : SWWMWeapon
 		Vector3 x, y, z, x2, y2, z2, dir, origin;
 		double a, s;
 		[x, y, z] = swwm_CoordUtil.GetAxes(pitch,angle,roll);
-		SWWMHandler.DoKnockback(self,-x,32000.);
+		SWWMUtility.DoKnockback(self,-x,32000.);
 		[x2, y2, z2] = swwm_CoordUtil.GetAxes(BulletSlope(),angle,roll);
 		origin = level.Vec3Offset(Vec2OffsetZ(0,0,player.viewz),10*x+3*y-5*z);
 		a = FRandom[Eviscerator](0,360);

@@ -5,7 +5,6 @@ Not so fundamental things during first beta:
  - Extra Demolitionist animations (swimming, additional gestures)
  - Dual wielding Explodium Gun
  - Quick grenade function (Explodium Mag)
- - Allow loading partial mags from spare bullets
  - Parrying for hitscan weapons (currently parrying only handles vanilla LineAttack)
  - Fun options
    - Omnibusting (all weapons can bust walls)
@@ -13,7 +12,7 @@ Not so fundamental things during first beta:
    - Confetti gibs
  - Keen replacement (need ideas)
  - Achievements
- - Extra Demolitionist Menu tabs (radio, pong minigame)
+ - Extra Demolitionist Menu tabs (radio, minigames)
  - Collectables
 
 Extra things for later:

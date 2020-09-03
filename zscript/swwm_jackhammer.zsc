@@ -290,7 +290,7 @@ Class PusherProjectile : Actor
 		if ( target.bNOBLOOD || target.bINVULNERABLE ) A_StartSound("pusher/althit",CHAN_WEAPON,CHANF_OVERLAP);
 		else A_StartSound("pusher/altmeat",CHAN_WEAPON,CHANF_OVERLAP);
 		target.A_QuakeEx(6,6,6,10,0,200,"",QF_RELATIVE|QF_SCALEDOWN,falloff:100,rollIntensity:.7);
-		SWWMHandler.DoKnockback(target,vel.unit(),85000);
+		SWWMUtility.DoKnockback(target,vel.unit(),85000);
 		return damage;
 	}
 	override void Touch( Actor toucher )
@@ -381,7 +381,7 @@ Class PusherWeapon : SWWMWeapon
 			{
 				double diff = deltaangle(self.angle,AngleTo(d.HitActor));
 				self.angle += clamp(diff,-5.,5.);
-				SWWMHandler.DoKnockback(d.HitActor,d.HitDir,8500);
+				SWWMUtility.DoKnockback(d.HitActor,d.HitDir,8500);
 				d.HitActor.A_QuakeEx(4,4,4,10,0,1,"",QF_RELATIVE|QF_SCALEDOWN,rollIntensity:1.1);
 				dmg = d.HitActor.DamageMobj(invoker,self,dmg,'Tenderize',DMG_THRUSTLESS);
 				if ( d.HitActor.bNOBLOOD || d.HitActor.bINVULNERABLE )
@@ -466,7 +466,7 @@ Class PusherWeapon : SWWMWeapon
 			{
 				double diff = deltaangle(self.angle,AngleTo(d.HitActor));
 				self.angle += clamp(diff,-5.,5.);
-				SWWMHandler.DoKnockback(d.HitActor,d.HitDir,85000);
+				SWWMUtility.DoKnockback(d.HitActor,d.HitDir,85000);
 				d.HitActor.A_QuakeEx(9,9,9,15,0,1,"",QF_RELATIVE|QF_SCALEDOWN,rollIntensity:1.1);
 				dmg = d.HitActor.DamageMobj(invoker,self,dmg,'Tenderize',DMG_THRUSTLESS);
 				if ( d.HitActor.bNOBLOOD || d.HitActor.bINVULNERABLE )
@@ -517,7 +517,7 @@ Class PusherWeapon : SWWMWeapon
 			p.pitch = pitch;
 			p.vel = x*p.speed*invoker.chargelevel;
 			p.target = self;
-			SWWMHandler.DoKnockback(self,x,85000.);
+			SWWMUtility.DoKnockback(self,x,85000.);
 		}
 		if ( !gone )
 		{

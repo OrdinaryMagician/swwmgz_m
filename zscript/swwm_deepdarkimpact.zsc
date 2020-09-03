@@ -31,7 +31,7 @@ Class AirBullet : FastProjectile
 			if ( target == lasthit ) return 0;
 			lasthit = target;
 		}
-		SWWMHandler.DoKnockback(target,vel.unit(),10000);
+		SWWMUtility.DoKnockback(target,vel.unit(),10000);
 		return damage;
 	}
 	override void Effect()
@@ -54,7 +54,7 @@ Class AirBullet : FastProjectile
 			s.alpha *= .2;
 		}
 		bAMBUSH = true;
-		SWWMHandler.DoExplosion(self,GetMissileDamage(0,0),0,50,ignoreme:target);
+		SWWMUtility.DoExplosion(self,GetMissileDamage(0,0),0,50,ignoreme:target);
 		bAMBUSH = false;
 		tcnt++;
 		if ( tcnt < 2 ) return;
@@ -72,9 +72,9 @@ Class AirBullet : FastProjectile
 			dir /= dist;
 			double mm = 8000000./max(20.,dist);
 			if ( (target.pos.z > target.floorz) && target.TestMobjZ() ) mm *= 1.6;
-			SWWMHandler.DoKnockback(target,dir,mm);
+			SWWMUtility.DoKnockback(target,dir,mm);
 		}
-		SWWMHandler.DoExplosion(self,0,100000,150,ignoreme:target);
+		SWWMUtility.DoExplosion(self,0,100000,150,ignoreme:target);
 		A_QuakeEx(6,6,6,20,0,250,"",QF_RELATIVE|QF_SCALEDOWN,rollIntensity:1.);
 		A_StartSound("deepimpact/bullethit",CHAN_VOICE,CHANF_DEFAULT,1.,.3);
 		A_SprayDecal("ImpactMark");
@@ -282,7 +282,7 @@ Class DeepImpact : SWWMWeapon
 		invoker.clipcount = max(0,invoker.clipcount-3);
 		Vector3 x, y, z, dir;
 		[x, y, z] = swwm_CoordUtil.GetAxes(pitch,angle,roll);
-		SWWMHandler.DoKnockback(self,-x,2000.);
+		SWWMUtility.DoKnockback(self,-x,2000.);
 		Vector3 origin = level.Vec3Offset(Vec2OffsetZ(0,0,player.viewz),10*x+2*y-3*z);
 		DeepTracer t = new("DeepTracer");
 		t.ignoreme = self;
@@ -348,7 +348,7 @@ Class DeepImpact : SWWMWeapon
 		{
 			wnorm /= wallhits;
 			if ( (pos.z > floorz) && TestMobjZ() ) wnorm *= 2.4;
-			SWWMHandler.DoKnockback(self,wnorm.unit(),wnorm.length()*5000000.);
+			SWWMUtility.DoKnockback(self,wnorm.unit(),wnorm.length()*5000000.);
 		}
 		for ( int i=0; i<list.Size(); i++ )
 		{
@@ -401,7 +401,7 @@ Class DeepImpact : SWWMWeapon
 		invoker.clipcount = 0;
 		Vector3 x, y, z, x2, y2, z2;
 		[x, y, z] = swwm_CoordUtil.GetAxes(pitch,angle,roll);
-		SWWMHandler.DoKnockback(self,-x,42000.);
+		SWWMUtility.DoKnockback(self,-x,42000.);
 		Vector3 origin = level.Vec3Offset(Vec2OffsetZ(0,0,player.viewz),10*x+2*y-3*z);
 		double a = FRandom[Spread](0,360), s = FRandom[Spread](0,.002);
 		[x2, y2, z2] = swwm_CoordUtil.GetAxes(BulletSlope(),angle,roll);

@@ -64,7 +64,7 @@ Class ExplodiumMagArm : Actor
 		{
 			A_CountDown();
 			Spawn("ExplodiumMagTrail",pos);
-			SWWMHandler.DoExplosion(self,2+reactiontime/3,3000+500*reactiontime,40+3*reactiontime,20);
+			SWWMUtility.DoExplosion(self,2+reactiontime/3,3000+500*reactiontime,40+3*reactiontime,20);
 			Vector3 pvel = (FRandom[ExploS](-1,1),FRandom[ExploS](-1,1),FRandom[ExploS](-1,1)).unit()*FRandom[ExploS](1,5);
 			let s = Spawn("SWWMHalfSmoke",pos);
 			s.vel = pvel+vel*.2;
@@ -133,7 +133,7 @@ Class ExplodiumMagProj : Actor
 		A_SetRenderStyle(1.,STYLE_Add);
 		Scale *= 2.+.2*special1;
 		A_AlertMonsters(6000);
-		SWWMHandler.DoExplosion(self,20+15*special1,80000+8000*special1,90+10*special1,60,DE_EXTRAZTHRUST);
+		SWWMUtility.DoExplosion(self,20+15*special1,80000+8000*special1,90+10*special1,60,DE_EXTRAZTHRUST);
 		A_QuakeEx(9,9,9,30,0,400+80*special1,"",QF_RELATIVE|QF_SCALEDOWN,falloff:300,rollintensity:2.);
 		A_StartSound("explodium/maghit",CHAN_VOICE,attenuation:.35);
 		A_StartSound("explodium/maghit",CHAN_WEAPON,attenuation:.2);
@@ -227,7 +227,7 @@ Class ExplodiumBulletImpact : Actor
 	{
 		Super.PostBeginPlay();
 		A_AlertMonsters(3000);
-		SWWMHandler.DoExplosion(self,25,80000,90,40,DE_EXTRAZTHRUST);
+		SWWMUtility.DoExplosion(self,25,80000,90,40,DE_EXTRAZTHRUST);
 		A_QuakeEx(4,4,4,10,0,250,"",QF_RELATIVE|QF_SCALEDOWN,falloff:150,rollintensity:0.2);
 		A_StartSound("explodium/hit",CHAN_VOICE,attenuation:.6);
 		A_StartSound("explodium/hit",CHAN_WEAPON,attenuation:.3);
@@ -304,7 +304,7 @@ Class ExplodiumGun : SWWMWeapon
 		A_PlayerFire();
 		Vector3 x, y, z, x2, y2, z2;
 		[x, y, z] = swwm_CoordUtil.GetAxes(pitch,angle,roll);
-		SWWMHandler.DoKnockback(self,-x,12000.);
+		SWWMUtility.DoKnockback(self,-x,4000.);
 		Vector3 origin = level.Vec3Offset(Vec2OffsetZ(0,0,player.viewz),10*x+3*y-2*z);
 		double a = FRandom[Spread](0,360), s = FRandom[Spread](0,.002);
 		[x2, y2, z2] = swwm_CoordUtil.GetAxes(BulletSlope(),angle,roll);
@@ -315,7 +315,7 @@ Class ExplodiumGun : SWWMWeapon
 		if ( d.HitType == TRACE_HitActor )
 		{
 			int dmg = 25;
-			SWWMHandler.DoKnockback(d.HitActor,d.HitDir,48000);
+			SWWMUtility.DoKnockback(d.HitActor,d.HitDir,48000);
 			dmg = d.HitActor.DamageMobj(invoker,self,dmg,'Explodium',DMG_USEANGLE|DMG_THRUSTLESS,atan2(d.HitDir.y,d.HitDir.x));
 			if ( d.HitActor.bNOBLOOD || d.HitActor.bINVULNERABLE )
 			{

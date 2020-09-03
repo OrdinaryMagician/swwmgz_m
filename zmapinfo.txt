@@ -1,6 +1,6 @@
 GameInfo
 {
-	AddEventHandlers = "SWWMCrashHandler", "SWWMBrutalHandler", "SWWMHDoomHandler", "SWWMVanillaBossHandler", "SWWMHandler", "SWWMGoreHandler", "CBTHandler", "SWWMPreloader", "SWWMExcuseMeWhatTheFuckHandler", "SWWMReadThisHijacker"
+	AddEventHandlers = "SWWMCrashHandler", "SWWMBrutalHandler", "SWWMHDoomHandler", "SWWMVanillaBossHandler", "SWWMHandler", "SWWMGoreHandler", "CBTHandler", "SWWMPreloader", "SWWMReadThisHijacker"
 	PlayerClasses = "Demolitionist"
 	StatusBarClass = "SWWMStatusBar"
 	BackpackType = "HammerspaceEmbiggener"

@@ -56,7 +56,7 @@ Class SilverAirRip : Actor
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
-		SWWMHandler.DoExplosion(self,40,2000,40,ignoreme:target);
+		SWWMUtility.DoExplosion(self,40,2000,40,ignoreme:target);
 		Destroy();
 	}
 }
@@ -78,7 +78,7 @@ Class SilverAirRip2 : Actor
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
-		SWWMHandler.DoExplosion(self,20,2000,30,ignoreme:target);
+		SWWMUtility.DoExplosion(self,20,2000,30,ignoreme:target);
 		Destroy();
 	}
 }
@@ -101,7 +101,7 @@ Class SilverImpact : Actor
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
-		SWWMHandler.DoExplosion(self,100,8000,100,20);
+		SWWMUtility.DoExplosion(self,100,8000,100,20);
 		A_AlertMonsters(2500);
 		A_QuakeEx(4,4,4,20,0,400,"",QF_RELATIVE|QF_SCALEDOWN,falloff:100,rollIntensity:.9);
 		if ( special1 )
@@ -394,7 +394,7 @@ Class FatChodeImpact : Actor
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
-		SWWMHandler.DoExplosion(self,1500,40000,250,120,DE_THRUWALLS|DE_EXTRAZTHRUST);
+		SWWMUtility.DoExplosion(self,1500,40000,250,120,DE_THRUWALLS|DE_EXTRAZTHRUST);
 		A_AlertMonsters(8000);
 		A_QuakeEx(7,7,7,50,0,2000,"",QF_RELATIVE|QF_SCALEDOWN,falloff:800,rollIntensity:1.);
 		A_StartSound("silverbullet/chode",CHAN_VOICE,CHANF_DEFAULT,1.,.35);
@@ -528,7 +528,7 @@ Class FatChodeExplosionArm : Actor
 		TNT1 A 1
 		{
 			A_CountDown();
-			SWWMHandler.DoExplosion(self,20+reactiontime,8000+1500*reactiontime,80+5*reactiontime,50,DE_THRUWALLS);
+			SWWMUtility.DoExplosion(self,20+reactiontime,8000+1500*reactiontime,80+5*reactiontime,50,DE_THRUWALLS);
 			if ( level.IsPointInLevel(pos) )
 			{
 				A_SprayDecal("HugeScorch",-32);
@@ -596,9 +596,23 @@ Class SilverBullet : SWWMWeapon
 		Screen.DrawTexture(AmmoIcon[0],false,bx-18,by-19,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true,DTA_ColorOverlay,fcbselected?Color(128,0,0,0):Color(0,0,0,0));
 		Screen.DrawTexture(AmmoIcon[1],false,bx-18,by-41,DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true,DTA_ColorOverlay,fcbselected?Color(0,0,0,0):Color(128,0,0,0));
 		int cx = (Ammo1.Amount>9)?32:29;
-		Screen.DrawText(TewiFont,Font.CR_FIRE,bx-cx,by-18,String.Format("%d",Ammo1.Amount),DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true,DTA_ColorOverlay,fcbselected?Color(128,0,0,0):Color(0,0,0,0));
+		int sb = Owner.CountInv("SilverBullets");
+		if ( sb > 0 )
+		{
+			int cbx = (sb>9)?34:30;
+			Screen.DrawText(TewiFont,Font.CR_FIRE,bx-cbx,by-21,String.Format("⁺%s",SWWMUtility.SuperscriptNum(sb)),DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true,DTA_Spacing,-1,DTA_ColorOverlay,fcbselected?Color(128,0,0,0):Color(0,0,0,0));
+			Screen.DrawText(TewiFont,Font.CR_FIRE,bx-cx,by-14,String.Format("%d",Ammo1.Amount),DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true,DTA_ColorOverlay,fcbselected?Color(128,0,0,0):Color(0,0,0,0));
+		}
+		else Screen.DrawText(TewiFont,Font.CR_FIRE,bx-cx,by-18,String.Format("%d",Ammo1.Amount),DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true,DTA_ColorOverlay,fcbselected?Color(128,0,0,0):Color(0,0,0,0));
 		cx = (Ammo2.Amount>9)?32:29;
-		Screen.DrawText(TewiFont,Font.CR_FIRE,bx-cx,by-40,String.Format("%d",Ammo2.Amount),DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true,DTA_ColorOverlay,fcbselected?Color(0,0,0,0):Color(128,0,0,0));
+		sb = Owner.CountInv("SilverBullets2");
+		if ( sb > 0 )
+		{
+			int cbx = (sb>9)?34:30;
+			Screen.DrawText(TewiFont,Font.CR_FIRE,bx-cbx,by-43,String.Format("⁺%s",SWWMUtility.SuperscriptNum(sb)),DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true,DTA_Spacing,-1,DTA_ColorOverlay,fcbselected?Color(0,0,0,0):Color(128,0,0,0));
+			Screen.DrawText(TewiFont,Font.CR_FIRE,bx-cx,by-36,String.Format("%d",Ammo2.Amount),DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true,DTA_ColorOverlay,fcbselected?Color(0,0,0,0):Color(128,0,0,0));
+		}
+		else Screen.DrawText(TewiFont,Font.CR_FIRE,bx-cx,by-40,String.Format("%d",Ammo2.Amount),DTA_VirtualWidthF,ss.x,DTA_VirtualHeightF,ss.y,DTA_KeepRatio,true,DTA_ColorOverlay,fcbselected?Color(0,0,0,0):Color(128,0,0,0));
 	}
 	override void HudTick()
 	{
@@ -609,8 +623,8 @@ Class SilverBullet : SWWMWeapon
 	override bool ReportHUDAmmo()
 	{
 		if ( (chambered && !fired) || (clipcount > 0) ) return true;
-		if ( (Ammo1.Amount <= 0) && (Ammo2.Amount <= 0) ) return false;
-		return Super.ReportHUDAmmo();
+		if ( (Ammo1.Amount <= 0) && (Ammo2.Amount <= 0) && (CountInv("SilverBullets") <= 0) && (CountInv("SilverBullets2") <= 0) ) return false;
+		return true;
 	}
 	override bool CheckAmmo( int firemode, bool autoswitch, bool requireammo, int ammocount )
 	{
@@ -620,7 +634,7 @@ Class SilverBullet : SWWMWeapon
 			// allow player to still use the zoom even if there's no ammo left
 			// (should work fine, assuming I've correctly interpreted the execution chain of all this stuff)
 			if ( autoswitch && (fireMode == AltFire) ) return true;
-			return ((chambered && !fired) || (clipcount > 0) || (Ammo1.Amount > 0) || (Ammo2.Amount > 0));
+			return ((chambered && !fired) || (clipcount > 0) || (Ammo1.Amount > 0) || (Ammo2.Amount > 0) || (CountInv("SilverBullets") > 0) || (CountInv("SilverBullets2") > 0));
 		}
 		return Super.CheckAmmo(firemode,autoswitch,requireammo,ammocount);
 	}
@@ -692,21 +706,21 @@ Class SilverBullet : SWWMWeapon
 		{
 			int realdmg = t.HitList[i].HitDamage;
 			SWWMDamageAccumulator.Accumulate(t.HitList[i].HitActor,realdmg,invoker,self,'shot',false,DMG_FOILINVUL);
-			SWWMHandler.DoKnockback(t.HitList[i].HitActor,t.HitList[i].x+(0,0,0.025),realdmg*20.*FRandom[SilverBullet](.8,1.2));
-			if ( t.HitList[i].HitActor.bNOBLOOD )
-			{
-				let p = Spawn("SilverImpact",t.HitList[i].HitLocation);
-				p.angle = atan2(t.HitList[i].x.y,t.HitList[i].x.x)+180;
-				p.pitch = asin(t.HitList[i].x.z);
-				p.target = self;
-			}
-			else
+			SWWMUtility.DoKnockback(t.HitList[i].HitActor,t.HitList[i].x+(0,0,0.025),realdmg*20.*FRandom[SilverBullet](.8,1.2));
+			if ( t.HitList[i].HitActor && !t.HitList[i].HitActor.bNOBLOOD )
 			{
 				t.HitList[i].HitActor.TraceBleed(realdmg,self);
 				t.HitList[i].HitActor.SpawnBlood(t.HitList[i].HitLocation,atan2(t.HitList[i].x.y,t.HitList[i].x.x)+180,realdmg);
 				t.HitList[i].HitActor.A_StartSound("silverbullet/flesh",CHAN_DAMAGE,CHANF_OVERLAP,1.,2.);
 				let p = Spawn("SilverImpact",t.HitList[i].HitLocation);
 				p.special1 = 1;
+				p.target = self;
+			}
+			else
+			{
+				let p = Spawn("SilverImpact",t.HitList[i].HitLocation);
+				p.angle = atan2(t.HitList[i].x.y,t.HitList[i].x.x)+180;
+				p.pitch = asin(t.HitList[i].x.z);
 				p.target = self;
 			}
 		}
@@ -797,8 +811,8 @@ Class SilverBullet : SWWMWeapon
 			if ( t.Results.HitType == TRACE_HitActor )
 			{
 				int dmg = t.Results.HitActor.DamageMobj(invoker,self,1000,'shot',DMG_FOILINVUL|DMG_USEANGLE|DMG_THRUSTLESS,atan2(t.Results.HitVector.y,t.Results.HitVector.x));
-				SWWMHandler.DoKnockback(t.Results.HitActor,t.Results.HitVector+(0,0,.025),dmg*20.*FRandom[SilverBullet](.8,1.2));
-				if ( !t.Results.HitActor.bNOBLOOD )
+				SWWMUtility.DoKnockback(t.Results.HitActor,t.Results.HitVector+(0,0,.025),dmg*20.*FRandom[SilverBullet](.8,1.2));
+				if ( t.Results.HitActor && !t.Results.HitActor.bNOBLOOD )
 				{
 					t.Results.HitActor.TraceBleed(dmg,self);
 					t.Results.HitActor.SpawnBlood(t.Results.HitPos,atan2(t.Results.HitVector.y,t.Results.HitVector.x)+180,dmg);
@@ -899,7 +913,7 @@ Class SilverBullet : SWWMWeapon
 		}
 		double fact = invoker.fcbchambered?270000.:320000.;
 		if ( player.mo.CanCrouch() && (player.crouchfactor != 1) ) fact /= 10.;
-		SWWMHandler.DoKnockback(self,-x,fact);
+		SWWMUtility.DoKnockback(self,-x,fact);
 	}
 	action void A_DropCasing( bool fcb = false )
 	{
@@ -945,8 +959,9 @@ Class SilverBullet : SWWMWeapon
 			int dropamt = invoker.clipcount-maxgiveamt;
 			if ( dropamt > 0 ) ma.CreateTossable(dropamt);
 			ma.Amount = min(ma.MaxAmount,ma.Amount+invoker.clipcount);
-			if ( CheckLocalView() ) for ( int i=0; i<(invoker.clipcount-dropamt); i++ ) ma.PrintPickupMessage(true,ma.PickupMessage());
-			if ( (invoker.clipcount-dropamt) > 0 ) ma.PlayPickupSound(self);
+			ma.MagFill();
+			if ( CheckLocalView() ) for ( int i=0; i<min(ma.Amount,invoker.clipcount-dropamt); i++ ) ma.PrintPickupMessage(true,ma.PickupMessage());
+			if ( min(ma.Amount,invoker.clipcount-dropamt) > 0 ) ma.PlayPickupSound(self);
 		}
 		invoker.ClipCount = 0;
 		Vector3 x, y, z;
@@ -983,8 +998,10 @@ Class SilverBullet : SWWMWeapon
 	action void A_SwitchAmmoType( bool ifempty = false )
 	{
 		bool oldsel = invoker.fcbselected;
-		if ( invoker.fcbselected && (invoker.Ammo1.Amount > 0) ) invoker.fcbselected = (ifempty&&(invoker.Ammo2.Amount>0))?true:false;
-		else if ( !invoker.fcbselected && (invoker.Ammo2.Amount > 0) ) invoker.fcbselected = (ifempty&&(invoker.Ammo1.Amount>0))?false:true;
+		if ( invoker.fcbselected && ((invoker.Ammo1.Amount > 0) || (CountInv("SilverBullets") > 0)) )
+			invoker.fcbselected = (ifempty&&((invoker.Ammo2.Amount>0)||(CountInv("SilverBullets2")>0)))?true:false;
+		else if ( !invoker.fcbselected && ((invoker.Ammo2.Amount > 0) || (CountInv("SilverBullets2") > 0)) )
+			invoker.fcbselected = (ifempty&&((invoker.Ammo1.Amount>0)||(CountInv("SilverBullets")>0)))?false:true;
 		if ( oldsel != invoker.fcbselected ) A_StartSound("misc/invchange",CHAN_WEAPONEXTRA,CHANF_UI|CHANF_LOCAL);
 		A_WeaponReady(WRF_NOFIRE);
 	}
@@ -1067,7 +1084,7 @@ Class SilverBullet : SWWMWeapon
 		{
 			if ( !invoker.chambered || invoker.fired )
 			{
-				if ( !invoker.fired && (invoker.clipcount <= 0) && (sv_infiniteammo || FindInventory('PowerInfiniteAmmo',true) || (invoker.Ammo1.Amount > 0) || (invoker.Ammo2.Amount > 0)) )
+				if ( !invoker.fired && (invoker.clipcount <= 0) && (sv_infiniteammo || FindInventory('PowerInfiniteAmmo',true) || (invoker.Ammo1.Amount > 0) || (invoker.Ammo2.Amount > 0) || (CountInv("SilverBullets") > 0) || (CountInv("SilverBullets2") > 0)) )
 				{
 					A_SwitchAmmoType(true);
 					return ResolveState("Reload");
@@ -1275,7 +1292,7 @@ Class SilverBullet : SWWMWeapon
 	Reload:
 		XZW2 A 0
 		{
-			if ( ((invoker.clipcount >= invoker.default.clipcount) && (invoker.fcbselected == invoker.fcbloaded)) || (!sv_infiniteammo && !FindInventory('PowerInfiniteAmmo',true) && (invoker.Ammo1.Amount <= 0) && (invoker.Ammo2.Amount <= 0)) )
+			if ( ((invoker.clipcount >= invoker.default.clipcount) && (invoker.fcbselected == invoker.fcbloaded)) || (!sv_infiniteammo && !FindInventory('PowerInfiniteAmmo',true) && (invoker.Ammo1.Amount <= 0) && (invoker.Ammo2.Amount <= 0) && (CountInv("SilverBullets") <= 0) && (CountInv("SilverBullets2") <= 0)) )
 				return ResolveState("Idle");
 			if ( invoker.zoomed )
 			{
@@ -1328,9 +1345,20 @@ Class SilverBullet : SWWMWeapon
 		XZW5 D 2
 		{
 			invoker.fcbloaded = false;
-			invoker.clipcount = invoker.default.clipcount;
-			if ( !sv_infiniteammo && !FindInventory('PowerInfiniteAmmo',true) )
+			if ( sv_infiniteammo || FindInventory('PowerInfiniteAmmo',true) )
+				invoker.clipcount = invoker.default.clipcount;
+			else if ( invoker.Ammo1.Amount <= 0 )
+			{
+				MagAmmo sb = MagAmmo(FindInventory("SilverBullets"));
+				int takeamt = min(sb.Amount,sb.ClipSize);
+				invoker.clipcount = takeamt;
+				sb.Amount -= takeamt;
+			}
+			else
+			{
 				invoker.Ammo1.Amount = max(0,invoker.Ammo1.Amount-1);
+				invoker.clipcount = invoker.default.clipcount;
+			}
 			A_SwitchAmmoType(true);
 			A_StartSound("silverbullet/magin",CHAN_WEAPON,CHANF_OVERLAP);
 		}
@@ -1343,9 +1371,20 @@ Class SilverBullet : SWWMWeapon
 		XZWB D 2
 		{
 			invoker.fcbloaded = true;
-			invoker.clipcount = invoker.default.clipcount;
-			if ( !sv_infiniteammo && !FindInventory('PowerInfiniteAmmo',true) )
+			if ( sv_infiniteammo || FindInventory('PowerInfiniteAmmo',true) )
+				invoker.clipcount = invoker.default.clipcount;
+			else if ( invoker.Ammo2.Amount <= 0 )
+			{
+				MagAmmo sb = MagAmmo(FindInventory("SilverBullets2"));
+				int takeamt = min(sb.Amount,sb.ClipSize);
+				invoker.clipcount = takeamt;
+				sb.Amount -= takeamt;
+			}
+			else
+			{
 				invoker.Ammo2.Amount = max(0,invoker.Ammo2.Amount-1);
+				invoker.clipcount = invoker.default.clipcount;
+			}
 			A_SwitchAmmoType(true);
 			A_StartSound("silverbullet/magin",CHAN_WEAPON,CHANF_OVERLAP);
 		}

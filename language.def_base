@@ -883,8 +883,9 @@ SWWM_INTERTIP29 = "My girlfriends are really cute. Sorry, I had to say it.";
 SWWM_INTERTIP30 = "The Silver Bullet fires with such a force that its bullets leave shockwaves as they rip through the air (and enemies), dealing additional damage. It can also pierce through some walls.";
 // intermission fanart
 SWWM_FANART = "Art: ";
-SWWM_NFANART = "3";
+SWWM_NFANART = "4";
 SWWM_FANART1 = "S20TBL.jpg;Substance20 (@S20_TBL)";
 SWWM_FANART2 = "CaptainJ.png;Captain J (@Jho7835)";
 SWWM_FANART3 = "RedeadITA.png;Redead-ITA";
+SWWM_FANART4 = "Shivers.png;Sgt. Shivers (@Sgt_Shivers_)";
 // intermission 4komas (TBD)

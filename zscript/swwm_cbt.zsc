@@ -975,7 +975,7 @@ Class Wallbuster : SWWMWeapon
 		{
 			int realdmg = dmg?dmg:t.HitList[i].HitDamage;
 			SWWMDamageAccumulator.Accumulate(t.HitList[i].HitActor,realdmg,invoker,self,'shot',!large);
-			SWWMHandler.DoKnockback(t.HitList[i].HitActor,t.HitList[i].x+(0,0,0.025),mm*FRandom[Wallbuster](0.4,1.2));
+			SWWMUtility.DoKnockback(t.HitList[i].HitActor,t.HitList[i].x+(0,0,0.025),mm*FRandom[Wallbuster](0.4,1.2));
 			if ( t.HitList[i].HitActor.bNOBLOOD || t.HitList[i].HitActor.bINVULNERABLE )
 			{
 				let p = Spawn(impact,t.HitList[i].HitLocation);
@@ -1187,7 +1187,7 @@ Class Wallbuster : SWWMWeapon
 					s.alpha *= .4;
 					s.vel += vel*.5+x*FRandom[Wallbuster](4.,8.)+y*FRandom[Wallbuster](-1,1)+z*FRandom[Wallbuster](-1,1);
 				}
-				SWWMHandler.DoKnockback(self,-x,18000.);
+				SWWMUtility.DoKnockback(self,-x,18000.);
 				break;
 			case 2:
 				// saltshot
@@ -1227,7 +1227,7 @@ Class Wallbuster : SWWMWeapon
 					s.alpha *= .4;
 					s.vel += vel*.5+x*FRandom[Wallbuster](4.,8.)+y*FRandom[Wallbuster](-2,2)+z*FRandom[Wallbuster](-2,2);
 				}
-				SWWMHandler.DoKnockback(self,-x,17000.);
+				SWWMUtility.DoKnockback(self,-x,17000.);
 				break;
 			case 3:
 				// lead ball
@@ -1263,7 +1263,7 @@ Class Wallbuster : SWWMWeapon
 					s.alpha *= .4;
 					s.vel += vel*.5+x*FRandom[Wallbuster](4.,8.)+y*FRandom[Wallbuster](-1,1)+z*FRandom[Wallbuster](-1,1);
 				}
-				SWWMHandler.DoKnockback(self,-x,7200.);
+				SWWMUtility.DoKnockback(self,-x,7200.);
 				break;
 			default:
 				// buckshot
@@ -1308,7 +1308,7 @@ Class Wallbuster : SWWMWeapon
 					s.alpha *= .4;
 					s.vel += vel*.5+x*FRandom[Wallbuster](4.,8.)+y*FRandom[Wallbuster](-2,2)+z*FRandom[Wallbuster](-2,2);
 				}
-				SWWMHandler.DoKnockback(self,-x,12000.);
+				SWWMUtility.DoKnockback(self,-x,12000.);
 				break;
 			}
 		}

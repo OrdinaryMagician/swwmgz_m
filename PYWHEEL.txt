@@ -1,22 +1,27 @@
 Demolitionist
 {
-	include "PusherWeapon"
-	//include "ItamexHammer"
-	include "DeepImpact"
-	include "ExplodiumGun"
-	include "Spreadgun"
-	//include "PuntzerBeta"
-	include "Wallbuster"
-	//include "PuntzerGamma"
-	include "Eviscerator"
-	//include "Quadravol"
-	include "Hellblazer"
-	//include "BlackfireIgniter"
-	include "Sparkster"
-	//include "ModernSparkster"
-	include "SilverBullet"
-	//include "EMPCarbine"
-	include "CandyGun"
-	//include "PROWELfartsupintheTADEL"
-	include "Ynykron"
+	include "PusherWeapon";
+	//include "ItamexHammer";
+	include "DeepImpact";
+	include "ExplodiumGun";
+	include "Spreadgun";
+	//include "PuntzerBeta";
+	include "Wallbuster";
+	//include "PuntzerGamma";
+	include "Eviscerator";
+	//include "Quadravol";
+	//include "HeavyMahSheenGun";
+	include "Hellblazer";
+	//include "BlackfireIgniter";
+	//include "SkullLauncher";
+	include "Sparkster";
+	//include "ModernSparkster";
+	include "SilverBullet";
+	//include "EMPCarbine";
+	//include "Cryolance";
+	include "CandyGun";
+	//include "PROWELfartsupintheTADEL";
+	//include "RayKhom";
+	include "Ynykron";
+	//include "AODWeapon";
 }

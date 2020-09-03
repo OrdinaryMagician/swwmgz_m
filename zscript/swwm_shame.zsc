@@ -1,0 +1,123 @@
+// SHAMEFUL DISPLAY
+
+// >loading brutal doom with this
+Class SWWMBrutalHandler : StaticEventHandler
+{
+	ui int timer;
+	ui TextureID scr;
+	bool detected;
+
+	override void OnRegister()
+	{
+		for ( int i=0; i<AllActorClasses.size(); i++ )
+		{
+			if ( (AllActorClasses[i].GetClassName() != "BrutalWeapon")
+				&& (AllActorClasses[i].GetClassName() != "BrutalDoomer") ) continue;
+			detected = true;
+			break;
+		}
+		SetRandomSeed[bdscreen](Random[bdscreen]()+consoleplayer+MSTime());
+		if ( detected )
+			Console.Printf("\cg========\n\cgIf you have BD on your autoload, you really shouldn't.\n\cgIf you manually loaded it with this mod, why would you?\n\cgThey're not compatible and never will be.\n\cg========");
+	}
+
+	override void UiTick()
+	{
+		if ( !detected ) return;
+		if ( gamestate == GS_LEVEL )
+		{
+			if ( timer == 1 )
+			{
+				S_StartSound("brutal/ezmodo",CHAN_YOUDONEFUCKEDUP,CHANF_UI|CHANF_NOPAUSE|CHANF_OVERLAP,1,ATTN_NONE);
+				S_StartSound("brutal/ezmodo",CHAN_YOUDONEFUCKEDUP,CHANF_UI|CHANF_NOPAUSE|CHANF_OVERLAP,1,ATTN_NONE);
+			}
+			else if ( timer == 350 ) ThrowAbortException(">Brutal Doom");
+			timer++;
+		}
+		else timer = 0;
+	}
+
+	override void WorldTick()
+	{
+		if ( !detected ) return;
+		for ( int i=0; i<MAXPLAYERS; i++ ) if ( playeringame[i] ) players[i].cheats |= CF_TOTALLYFROZEN;
+	}
+
+	override void RenderOverlay( RenderEvent e )
+	{
+		if ( !detected ) return;
+		if ( !scr ) scr = TexMan.CheckForTexture("graphics/bdscreen.png",TexMan.Type_Any);
+		Screen.Dim("Red",(timer/350.)-.2,0,0,Screen.GetWidth(),Screen.GetHeight());
+		double ar = Screen.GetAspectRatio();
+		Vector2 tsize = TexMan.GetScaledSize(scr);
+		Vector2 vsize = (Screen.GetWidth(),Screen.GetHeight());
+		if ( (tsize.x > vsize.x) || (tsize.y > vsize.y) )
+		{
+			double sar = tsize.x/tsize.y;
+			if ( sar > ar ) vsize = (tsize.x,tsize.x/ar);
+			else if ( sar < ar ) vsize = (tsize.y*ar,tsize.y);
+			else vsize = tsize;
+		}
+		Screen.DrawTexture(scr,false,(vsize.x-tsize.x)/2.+FRandom[bdscreen](-1,1)*max(timer-40,0)**3*.000003,(vsize.y-tsize.y)/2.+FRandom[bdscreen](-1,1)*max(timer-40,0)**3*.000003,DTA_VirtualWidthF,vsize.x,DTA_VirtualHeightF,vsize.y,DTA_KeepRatio,true,DTA_Alpha,min(1.,timer/50.));
+		Screen.Dim("Red",(timer/70.)-3.5,0,0,Screen.GetWidth(),Screen.GetHeight());
+	}
+}
+
+// HORNY
+Class SWWMHDoomHandler : StaticEventHandler
+{
+	ui int timer;
+	ui TextureID scr;
+	bool detected;
+
+	override void OnRegister()
+	{
+		for ( int i=0; i<AllActorClasses.size(); i++ )
+		{
+			if ( AllActorClasses[i].GetClassName() != "HDoomPlayer" ) continue;
+			detected = true;
+			break;
+		}
+		SetRandomSeed[hdscreen](Random[hdscreen]()+consoleplayer+MSTime());
+		if ( detected )
+			Console.Printf("\cg========\n\cgHa ha very funny.\n\cgIf you want the Demolitionist to fuck some hot demon girls go commission a porn artist.\n\cg========");
+	}
+
+	override void UiTick()
+	{
+		if ( !detected ) return;
+		if ( gamestate == GS_LEVEL )
+		{
+			if ( timer == 50 )
+			{
+				S_StartSound("bestsound",CHAN_YOUDONEFUCKEDUP,CHANF_UI|CHANF_NOPAUSE|CHANF_OVERLAP,1,ATTN_NONE);
+				S_StartSound("bestsound",CHAN_YOUDONEFUCKEDUP,CHANF_UI|CHANF_NOPAUSE|CHANF_OVERLAP,1,ATTN_NONE);
+			}
+			else if ( timer == 70 )
+			{
+				int ngiggl = Random[hdscreen](1,14);
+				S_StartSound(String.Format("saya/giggle%d",ngiggl),CHAN_YOUDONEFUCKEDUP,CHANF_UI|CHANF_NOPAUSE|CHANF_OVERLAP,1,ATTN_NONE);
+				S_StartSound(String.Format("saya/giggle%d",ngiggl),CHAN_YOUDONEFUCKEDUP,CHANF_UI|CHANF_NOPAUSE|CHANF_OVERLAP,1,ATTN_NONE);
+			}
+			timer++;
+		}
+		else timer = 0;
+	}
+
+	override void RenderOverlay( RenderEvent e )
+	{
+		if ( !detected || (timer < 50) ) return;
+		if ( !scr ) scr = TexMan.CheckForTexture("graphics/hdscreen.png",TexMan.Type_Any);
+		double ar = Screen.GetAspectRatio();
+		Vector2 tsize = TexMan.GetScaledSize(scr);
+		Vector2 vsize = (Screen.GetWidth(),Screen.GetHeight());
+		if ( (tsize.x > vsize.x) || (tsize.y > vsize.y) )
+		{
+			double sar = tsize.x/tsize.y;
+			if ( sar > ar ) vsize = (tsize.x,tsize.x/ar);
+			else if ( sar < ar ) vsize = (tsize.y*ar,tsize.y);
+			else vsize = tsize;
+		}
+		Screen.DrawTexture(scr,false,(vsize.x-tsize.x)/2.,(vsize.y-tsize.y)/2.,DTA_VirtualWidthF,vsize.x,DTA_VirtualHeightF,vsize.y,DTA_KeepRatio,true);
+	}
+}

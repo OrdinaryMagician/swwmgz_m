@@ -225,7 +225,7 @@ Class BigBiospark : Actor
 			{
 				let t = bt.Thing;
 				double dist;
-				if ( !t || !t.bSHOOTABLE || (!t.bISMONSTER && !(t is 'BossBrain')) || (t.Health <= 0) || (target && t.IsFriend(target)) || ((dist=Distance3D(t)) > 8000) || !CheckSight(t,SF_IGNOREVISIBILITY|SF_IGNOREWATERBOUNDARY) ) continue;
+				if ( !t || !t.bSHOOTABLE || (!t.bISMONSTER && !(t is 'BossBrain') && !t.player) || (t.Health <= 0) || (target && t.IsFriend(target)) || ((dist=Distance3D(t)) > 8000) || !CheckSight(t,SF_IGNOREVISIBILITY|SF_IGNOREWATERBOUNDARY) ) continue;
 				Vector3 dirto = level.Vec3Diff(pos,t.Vec3Offset(0,0,t.height/2)).unit();
 				if ( dist > closest ) continue;
 				closest = dist;
@@ -265,7 +265,7 @@ Class BigBiospark : Actor
 				Vector3 dirto = level.Vec3Diff(pos,t.Vec3Offset(0,0,t.height/2));
 				double dist = dirto.length();
 				dirto /= dist;
-				if ( dist > 4. ) SWWMHandler.DoKnockback(t,-dirto,clamp(120.-dist,0.,120.)*100);
+				if ( dist > 4. ) SWWMUtility.DoKnockback(t,-dirto,clamp(120.-dist,0.,120.)*100);
 			}
 		}
 		Health -= 2;
@@ -276,7 +276,7 @@ Class BigBiospark : Actor
 	{
 		A_StopSound(CHAN_VOICE);
 		A_AlertMonsters(15000);
-		SWWMHandler.DoExplosion(self,450,200000,300,100);
+		SWWMUtility.DoExplosion(self,450,200000,300,100);
 		A_QuakeEx(9,9,9,30,0,1400,"",QF_RELATIVE|QF_SCALEDOWN,falloff:500,rollIntensity:1.5);
 		A_StartSound("biospark/bighit",CHAN_ITEM,attenuation:.4);
 		A_StartSound("biospark/bighit",CHAN_WEAPON,attenuation:.3);
@@ -330,8 +330,8 @@ Class BigBiospark : Actor
 		if ( special1 > 40 ) return;
 		double factor = (40-special1)/40.;
 		double invfct = 1.-factor;
-		SWWMHandler.DoExplosion(self,150*factor,0.,250*invfct);
-		SWWMHandler.DoExplosion(self,0,-8000*factor,500*invfct);
+		SWWMUtility.DoExplosion(self,150*factor,0.,250*invfct);
+		SWWMUtility.DoExplosion(self,0,-8000*factor,500*invfct);
 		int numpt = int(Random[ExploS](16,32)*factor);
 		for ( int i=0; i<numpt; i++ )
 		{
@@ -491,7 +491,7 @@ Class BiosparkBall : Actor
 			{
 				let t = bt.Thing;
 				double dist;
-				if ( !t || !t.bSHOOTABLE || (!t.bISMONSTER && !(t is 'BossBrain')) || (t.Health <= 0) || (target && t.IsFriend(target)) || ((dist=Distance3D(t)) > 500) || !CheckSight(t,SF_IGNOREVISIBILITY|SF_IGNOREWATERBOUNDARY) ) continue;
+				if ( !t || !t.bSHOOTABLE || (!t.bISMONSTER && !(t is 'BossBrain') && !t.player) || (t.Health <= 0) || (target && t.IsFriend(target)) || ((dist=Distance3D(t)) > 500) || !CheckSight(t,SF_IGNOREVISIBILITY|SF_IGNOREWATERBOUNDARY) ) continue;
 				Vector3 dirto = level.Vec3Diff(pos,t.Vec3Offset(0,0,t.height/2)).unit();
 				if ( dir dot dirto < .5 ) continue;	// don't seek stuff that's behind us
 				if ( dist > closest ) continue;
@@ -536,7 +536,7 @@ Class BiosparkBall : Actor
 	{
 		A_StopSound(CHAN_VOICE);
 		A_AlertMonsters(5000);
-		SWWMHandler.DoExplosion(self,50,120000,150,80);
+		SWWMUtility.DoExplosion(self,50,120000,150,80);
 		A_QuakeEx(6,6,6,16,0,800,"",QF_RELATIVE|QF_SCALEDOWN,falloff:300,rollIntensity:.8);
 		A_StartSound("biospark/hit",CHAN_ITEM,attenuation:.8);
 		A_StartSound("biospark/hit",CHAN_WEAPON,attenuation:.6);
@@ -588,8 +588,8 @@ Class BiosparkBall : Actor
 		if ( special1 > 30 ) return;
 		double factor = (30-special1)/30.;
 		double invfct = 1.-factor;
-		SWWMHandler.DoExplosion(self,30*factor,0.,150*invfct);
-		SWWMHandler.DoExplosion(self,0,-5000*factor,300*invfct);
+		SWWMUtility.DoExplosion(self,30*factor,0.,150*invfct);
+		SWWMUtility.DoExplosion(self,0,-5000*factor,300*invfct);
 		int numpt = int(Random[ExploS](16,32)*factor);
 		for ( int i=0; i<numpt; i++ )
 		{
@@ -699,7 +699,7 @@ Class BiosparkBeamImpact : Actor
 	{
 		Super.PostBeginPlay();
 		A_AlertMonsters(2000);
-		SWWMHandler.DoExplosion(self,30,120000,100,40);
+		SWWMUtility.DoExplosion(self,30,120000,100,40);
 		A_QuakeEx(3,3,3,12,0,800,"",QF_RELATIVE|QF_SCALEDOWN,falloff:300,rollIntensity:.4);
 		A_StartSound("biospark/beamhit",CHAN_ITEM,attenuation:1.1);
 		A_StartSound("biospark/beamhit",CHAN_WEAPON,attenuation:.8);
@@ -752,8 +752,8 @@ Class BiosparkBeamImpact : Actor
 		if ( special1 > 30 ) return;
 		double factor = (30-special1)/30.;
 		double invfct = 1.-factor;
-		SWWMHandler.DoExplosion(self,10*factor,0.,50*invfct);
-		SWWMHandler.DoExplosion(self,0.,-5000*factor,100*invfct);
+		SWWMUtility.DoExplosion(self,10*factor,0.,50*invfct);
+		SWWMUtility.DoExplosion(self,0.,-5000*factor,100*invfct);
 		int numpt = int(Random[ExploS](8,16)*factor);
 		for ( int i=0; i<numpt; i++ )
 		{
@@ -834,7 +834,7 @@ Class BiosparkComboImpactSub : Actor
 	{
 		Super.PostBeginPlay();
 		if ( !bAMBUSH ) return;
-		SWWMHandler.DoExplosion(self,200,10000,300,120);
+		SWWMUtility.DoExplosion(self,200,10000,300,120);
 	}
 	States
 	{
@@ -887,7 +887,7 @@ Class BiosparkComboImpact : Actor
 	{
 		Super.PostBeginPlay();
 		A_AlertMonsters(6000);
-		SWWMHandler.DoExplosion(self,bAMBUSH?(700+Args[0]*100):300,bAMBUSH?480000:200000,bAMBUSH?800:400,bAMBUSH?400:200);
+		SWWMUtility.DoExplosion(self,bAMBUSH?(700+Args[0]*100):300,bAMBUSH?480000:200000,bAMBUSH?800:400,bAMBUSH?400:200);
 		A_QuakeEx(9,9,9,25,0,2000,"",QF_RELATIVE|QF_SCALEDOWN,falloff:600,rollIntensity:1.5);
 		A_StartSound("biospark/bighit",CHAN_ITEM,attenuation:.4);
 		A_StartSound("biospark/bighit",CHAN_WEAPON,attenuation:.3);
@@ -955,8 +955,8 @@ Class BiosparkComboImpact : Actor
 		if ( special1 > mx ) return;
 		double factor = (mx-special1)/mx;
 		double invfct = 1.-factor;
-		SWWMHandler.DoExplosion(self,(bAMBUSH?(500+Args[0]*50):200)*factor,0.,(bAMBUSH?900.:300.)*invfct);
-		SWWMHandler.DoExplosion(self,0.,-12000*factor,(bAMBUSH?1500:500)*invfct);
+		SWWMUtility.DoExplosion(self,(bAMBUSH?(500+Args[0]*50):200)*factor,0.,(bAMBUSH?900.:300.)*invfct);
+		SWWMUtility.DoExplosion(self,0.,-12000*factor,(bAMBUSH?1500:500)*invfct);
 		int numpt = int(Random[ExploS](8,16)*factor);
 		for ( int i=0; i<numpt; i++ )
 		{
@@ -1096,7 +1096,7 @@ Class BiosparkBeam : Actor
 			}
 			else
 			{
-				SWWMHandler.DoKnockback(t.hitlist[i].hitactor,t.hitlist[i].x,15000);
+				SWWMUtility.DoKnockback(t.hitlist[i].hitactor,t.hitlist[i].x,15000);
 				t.hitlist[i].hitactor.DamageMobj(self,target,GetMissileDamage(0,0),'Electric',DMG_THRUSTLESS);
 			}
 		}
@@ -1143,7 +1143,7 @@ Class BiosparkBeam : Actor
 		{
 			let t = bt.Thing;
 			double dist;
-			if ( !t || !t.bSHOOTABLE || (!t.bISMONSTER && !(t is 'BossBrain')) || (t.Health <= 0) || (target && t.IsFriend(target)) || ((dist=Distance3D(t)) > 2000) || !CheckSight(t,SF_IGNOREVISIBILITY|SF_IGNOREWATERBOUNDARY) ) continue;
+			if ( !t || !t.bSHOOTABLE || (!t.bISMONSTER && !(t is 'BossBrain') && !t.player) || (t.Health <= 0) || (target && t.IsFriend(target)) || ((dist=Distance3D(t)) > 2000) || !CheckSight(t,SF_IGNOREVISIBILITY|SF_IGNOREWATERBOUNDARY) ) continue;
 			Vector3 dirto = level.Vec3Diff(invoker.nextpos,t.Vec3Offset(0,0,t.height/2));
 			if ( dir dot dirto < .2 ) continue;
 			if ( dist > closest ) continue;
@@ -1177,7 +1177,7 @@ Class BiosparkBeam : Actor
 		int numpt = Random[Sparkster](-1,6);
 		for ( int i=0; i<numpt; i++ )
 		{
-			let a = Spawn("BiosparkArc",level.Vec3Offset(pos,tdir*FRandom[Sparkster](0,1)));
+			let a = Spawn("BiosparkArc",level.Vec3Offset(pos,tdir*FRandom[Sparkster](frame?0:.3,1)));
 			a.angle = angle;
 			a.pitch = pitch;
 			a.target = target;
@@ -1186,7 +1186,7 @@ Class BiosparkBeam : Actor
 		numpt = Random[Sparkster](3,6);
 		for ( int i=0; i<numpt; i++ )
 		{
-			let a = Spawn("BiosparkArcSmall",level.Vec3Offset(pos,tdir*FRandom[Sparkster](0,1)));
+			let a = Spawn("BiosparkArcSmall",level.Vec3Offset(pos,tdir*FRandom[Sparkster](frame?0:.3,1)));
 			a.angle = angle;
 			a.pitch = pitch;
 			a.target = target;
@@ -1206,6 +1206,8 @@ Class BiosparkBeam : Actor
 			s.specialf2 = FRandom[ExploS](.02,.04);
 			s.roll = FRandom[ExploS](0,360);
 		}
+		A_StartSound("biospark/zap",CHAN_WEAPON,0,.5,.7);
+		let p = Spawn("SparkBeamLight",level.Vec3Offset(pos,tdir/2));
 		if ( bAMBUSH ) return;
 		let b = Spawn(GetClass(),invoker.nextpos);
 		b.frame = 1;
@@ -1213,8 +1215,6 @@ Class BiosparkBeam : Actor
 		b.pitch = asin(-invoker.nextdir.z);
 		b.target = target;
 		b.special1 = special1+1;
-		A_StartSound("biospark/zap",CHAN_WEAPON,0,.5,.7);
-		let p = Spawn("SparkBeamLight",level.Vec3Offset(pos,tdir/2));
 	}
 
 	action void A_Fade()
@@ -1239,7 +1239,7 @@ Class BiosparkBeam : Actor
 			}
 			else
 			{
-				SWWMHandler.DoKnockback(t.hitlist[i].hitactor,t.hitlist[i].x,15000);
+				SWWMUtility.DoKnockback(t.hitlist[i].hitactor,t.hitlist[i].x,15000);
 				t.hitlist[i].hitactor.DamageMobj(self,target,int(GetMissileDamage(0,0)*alpha),'Electric',DMG_THRUSTLESS);
 			}
 		}
@@ -1428,7 +1428,7 @@ Class BiosparkArc : Actor
 		}
 		for ( int i=0; i<t.hitlist.Size(); i++ )
 		{
-			SWWMHandler.DoKnockback(t.hitlist[i].hitactor,-t.hitlist[i].x,GetMissileDamage(0,0)*1000);
+			SWWMUtility.DoKnockback(t.hitlist[i].hitactor,-t.hitlist[i].x,GetMissileDamage(0,0)*1000);
 			t.hitlist[i].hitactor.DamageMobj(self,target,GetMissileDamage(0,0),'Electric',DMG_THRUSTLESS);
 		}
 		Vector3 normal = -t.Results.HitVector, dir = t.Results.HitVector;
@@ -1482,7 +1482,7 @@ Class BiosparkArc : Actor
 			{
 				let t = bt.Thing;
 				double dist;
-				if ( !t || !t.bSHOOTABLE || (!t.bISMONSTER && !(t is 'BossBrain')) || (t.Health <= 0) || (target && t.IsFriend(target)) || ((dist=Distance3D(t)) > 1500) || !CheckSight(t,SF_IGNOREVISIBILITY|SF_IGNOREWATERBOUNDARY) ) continue;
+				if ( !t || !t.bSHOOTABLE || (!t.bISMONSTER && !(t is 'BossBrain') && !t.player) || (t.Health <= 0) || (target && t.IsFriend(target)) || ((dist=Distance3D(t)) > 1500) || !CheckSight(t,SF_IGNOREVISIBILITY|SF_IGNOREWATERBOUNDARY) ) continue;
 				Vector3 dirto = level.Vec3Diff(invoker.nextpos,t.Vec3Offset(0,0,t.height/2));
 				if ( dir dot dirto < .2 ) continue;
 				if ( dist > closest ) continue;
@@ -1761,7 +1761,7 @@ Class BiosparkCore : Actor
 		bNOGRAVITY = true;
 		A_SetRenderStyle(1.,STYLE_Add);
 		A_AlertMonsters(5000);
-		SWWMHandler.DoExplosion(self,50,120000,150,60);
+		SWWMUtility.DoExplosion(self,50,120000,150,60);
 		A_QuakeEx(6,6,6,16,0,800,"",QF_RELATIVE|QF_SCALEDOWN,falloff:300,rollIntensity:.8);
 		Scale *= FRandom[ExploS](0.8,1.1);
 		Scale.x *= RandomPick[ExploS](-1,1);
@@ -1810,8 +1810,8 @@ Class BiosparkCore : Actor
 		if ( special2 > 30 ) return;
 		double factor = (30-special2)/30.;
 		double invfct = 1.-factor;
-		SWWMHandler.DoExplosion(self,0.,-5000*factor,300*invfct);
-		SWWMHandler.DoExplosion(self,30*factor,0.,150*invfct);
+		SWWMUtility.DoExplosion(self,0.,-5000*factor,300*invfct);
+		SWWMUtility.DoExplosion(self,30*factor,0.,150*invfct);
 		int numpt = int(Random[ExploS](16,32)*factor);
 		for ( int i=0; i<numpt; i++ )
 		{
@@ -1863,11 +1863,11 @@ Class BiosparkCore : Actor
 			pitch += invoker.pitchvel;
 			roll += invoker.rollvel;
 			Vector3 pvel = (FRandom[ExploS](-1,1),FRandom[ExploS](-1,1),FRandom[ExploS](-1,1)).unit()*FRandom[ExploS](.1,.4);
-			let s = Spawn("SWWMSmallSmoke",pos);
-			s.vel = pvel+vel*.5;
+			let s = Spawn("SWWMHalfSmoke",pos);
+			s.vel = pvel+vel*.1;
 			s.SetShade(Color(4,5,2)*Random[ExploS](40,50));
 			s.A_SetRenderStyle(s.alpha*.4,STYLE_AddShaded);
-			s.scale *= 4.;
+			s.scale *= 2.;
 			s.bAMBUSH = true;
 		}
 		Wait;
@@ -2022,7 +2022,7 @@ Class Sparkster : SWWMWeapon
 			A_ZoomFactor(1.);
 			A_AlertMonsters(1200);
 			A_PlayerFire();
-			SWWMHandler.DoKnockback(self,-x,2500.);
+			SWWMUtility.DoKnockback(self,-x,2500.);
 			a = FRandom[Spread](0,360);
 			s = FRandom[Spread](0,.012);
 			[x2, y2, z2] = swwm_CoordUtil.GetAxes(BulletSlope(),angle,roll);

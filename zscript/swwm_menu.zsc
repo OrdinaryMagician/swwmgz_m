@@ -85,6 +85,8 @@ Class SWWMKnowledgeBaseMenu : GenericMenu
 	// mouse stuff
 	Vector2 curmouse;
 	bool isrclick;
+	// somehow Drawer can be called while closing prematurely, which is big bollocks
+	bool isclosing;
 
 	// returns MPlus if we're playing in Japanese, otherwise returns the requested font
 	Font LangFont( Font req )
@@ -107,7 +109,7 @@ Class SWWMKnowledgeBaseMenu : GenericMenu
 			// can't open this menu outside of the game or if dead
 			// also can't if you're not the Demolitionist
 			EventHandler.SendNetworkEvent("swwmclearalltransactions",consoleplayer);
-			Close();
+			isclosing = true;
 			return;
 		}
 		TewiFont = Font.GetFont('TewiShaded');
@@ -1632,9 +1634,9 @@ Class SWWMKnowledgeBaseMenu : GenericMenu
 	override void Ticker()
 	{
 		Super.Ticker();
-		if ( players[consoleplayer].Health <= 0 )
+		if ( (players[consoleplayer].Health <= 0) || isclosing )
 		{
-			// ded
+			// ded (or force close)
 			EventHandler.SendNetworkEvent("swwmclearalltransactions",consoleplayer);
 			Close();
 			return;
@@ -2035,6 +2037,7 @@ Class SWWMKnowledgeBaseMenu : GenericMenu
 
 	override void Drawer()
 	{
+		if ( isclosing ) return;
 		Font fnt = LangFont(TewiFont);
 		String str;
 		double hs;

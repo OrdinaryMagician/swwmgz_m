@@ -92,6 +92,76 @@ Model "YnykronRing"
 	FrameIndex XRG4 X 0 0
 }
 
+Model "YnykronAltBeam"
+{
+	Path "models/extra"
+
+	Model 0 "WarpBeam_d.3d"
+	Scale 0.5 0.5 0.5
+	Offset 64 0 0
+	DONTCULLBACKFACES
+	USEACTORPITCH
+	USEACTORROLL
+
+	// starter
+	Skin 0 "MCBeamS.png"
+
+	// base
+	FrameIndex XZW1 A 0 0
+	// deviation
+	FrameIndex XZW1 B 0 5
+	FrameIndex XZW1 C 0 6
+	FrameIndex XZW1 D 0 7
+	FrameIndex XZW1 E 0 8
+
+	// other
+	Skin 0 "MCBeam.png"
+
+	// base
+	FrameIndex XZW2 A 0 0
+	// deviation
+	FrameIndex XZW2 B 0 5
+	FrameIndex XZW2 C 0 6
+	FrameIndex XZW2 D 0 7
+	FrameIndex XZW2 E 0 8
+}
+
+Model "YnykronVoidBeam"
+{
+	Path "models/extra"
+
+	Model 0 "BaseBeam_d.3d"
+	Scale 0.0625 0.05 0.05
+	Offset 8 0 0
+	DONTCULLBACKFACES
+	USEACTORPITCH
+	USEACTORROLL
+
+	// starter
+	Skin 0 "DarkRaysStart.png"
+	FrameIndex XZW1 A 0 0
+	// trailer
+	Skin 0 "DarkRays.png"
+	FrameIndex XZW1 B 0 0
+	// cap
+	Skin 0 "DarkRaysEnd.png"
+	FrameIndex XZW1 C 0 0
+	// early cap
+	Skin 0 "DarkRaysStartEnd.png"
+	FrameIndex XZW1 D 0 0
+}
+
+Model "YnykronSingularity"
+{
+	Path "models/extra"
+
+	Model 0 "BaseSphere_d.3d"
+	Skin 0 "Black.png"
+	Scale 0.125 0.125 0.125
+
+	FrameIndex XZW1 A 0 0
+}
+
 Model "Ynykron"
 {
 	Path "models"

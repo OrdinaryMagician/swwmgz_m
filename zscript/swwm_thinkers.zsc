@@ -1,0 +1,1072 @@
+// various stat tracking thinkers and others
+
+// Stats
+Class WeaponUsage
+{
+	Class<Weapon> w;
+	int kills;
+}
+
+Class MonsterKill
+{
+	Class<Actor> m;
+	int kills;
+}
+
+Class LevelStat
+{
+	bool hub;
+	String levelname, mapname;
+	int kcount, ktotal;
+	int icount, itotal;
+	int scount, stotal;
+	int time, par;
+}
+
+Class SWWMStats : Thinker
+{
+	PlayerInfo myplayer;
+	int lastspawn, dashcount, boostcount, stompcount, airtime, kills,
+		deaths,	damagedealt, hdamagedealt, damagetaken, hdamagetaken,
+		mkill, hiscore, hhiscore, topdealt, toptaken, skill, wponch,
+		busts;
+	double grounddist, airdist, swimdist, fuelusage, topspeed, teledist;
+	Array<WeaponUsage> wstats;
+	Array<MonsterKill> mstats;
+	Array<LevelStat> lstats;
+	Array<Class<Weapon> > alreadygot;
+	int favweapon;
+
+	bool GotWeapon( Class<Weapon> which )
+	{
+		for ( int i=0; i<alreadygot.Size(); i++ )
+		{
+			if ( alreadygot[i] == which ) return true;
+		}
+		alreadygot.Push(which);
+		return false;
+	}
+
+	void AddDamageDealt( int dmg )
+	{
+		int upper = dmg/1000000000;
+		int lower = dmg%1000000000;
+		if ( hdamagedealt+upper > 999999999 ) hdamagedealt = 999999999;
+		else hdamagedealt += upper;
+		damagedealt += lower;
+		if ( damagedealt > 999999999 )
+		{
+			upper = damagedealt/1000000000;
+			lower = damagedealt%1000000000;
+			if ( hdamagedealt+upper > 999999999 ) hdamagedealt = 999999999;
+			else hdamagedealt += upper;
+			damagedealt = lower;
+		}
+	}
+	void AddDamageTaken( int dmg )
+	{
+		int upper = dmg/1000000000;
+		int lower = dmg%1000000000;
+		if ( hdamagetaken+upper > 999999999 ) hdamagetaken = 999999999;
+		else hdamagetaken += upper;
+		damagetaken += lower;
+		if ( damagetaken > 999999999 )
+		{
+			upper = damagetaken/1000000000;
+			lower = damagetaken%1000000000;
+			if ( hdamagetaken+upper > 999999999 ) hdamagetaken = 999999999;
+			else hdamagetaken += upper;
+			damagetaken = lower;
+		}
+	}
+
+	void AddLevelStats()
+	{
+		let ls = new("LevelStat");
+		ls.hub = !!(level.clusterflags&level.CLUSTER_HUB);
+		ls.levelname = level.levelname;
+		ls.mapname = level.mapname;
+		ls.kcount = level.killed_monsters;
+		ls.ktotal = level.total_monsters;
+		ls.icount = level.found_items;
+		ls.itotal = level.total_items;
+		ls.scount = level.found_secrets;
+		ls.stotal = level.total_secrets;
+		ls.time = level.maptime;
+		ls.par = level.partime;
+		lstats.Push(ls);
+	}
+
+	void AddWeaponKill( Actor inflictor, Actor victim )
+	{
+		if ( victim )
+		{
+			bool found = false;
+			for ( int i=0; i<mstats.Size(); i++ )
+			{
+				if ( mstats[i].m != victim.GetClass() ) continue;
+				found = true;
+				mstats[i].kills++;
+				break;
+			}
+			if ( !found )
+			{
+				let ms = new("MonsterKill");
+				ms.m = victim.GetClass();
+				ms.kills = 1;
+				mstats.Push(ms);
+			}
+		}
+		Class<Weapon> which = myplayer.ReadyWeapon?myplayer.ReadyWeapon.GetClass():null;
+		if ( inflictor is 'Weapon' ) which = Weapon(inflictor).GetClass();
+		// properly credit some projectiles to their respective gun
+		if ( inflictor is 'AirBullet' ) which = 'DeepImpact';
+		else if ( inflictor is 'PusherProjectile' ) which = 'PusherWeapon';
+		else if ( (inflictor is 'ExplodiumMagArm') || (inflictor is 'ExplodiumMagProj') || (inflictor is 'ExplodiumBulletImpact') ) which = 'ExplodiumGun';
+		else if ( (inflictor is 'DragonBreathArm') || ((inflictor is 'SaltImpact') && !inflictor.Args[0]) || ((inflictor is 'SaltBeam') && !inflictor.Args[1]) || (inflictor is 'OnFire') || (inflictor is 'FlamingChunk') || ((inflictor is 'TheBall') && !inflictor.special1) || (inflictor is 'GoldenImpact') || (inflictor is 'GoldenSubImpact') || (inflictor is 'GoldenSubSubImpact') ) which = 'Spreadgun';
+		else if ( ((inflictor is 'SaltImpact') && inflictor.Args[0]) || ((inflictor is 'SaltBeam') && inflictor.Args[1]) || ((inflictor is 'TheBall') && inflictor.special1) ) which = 'Wallbuster';
+		else if ( (inflictor is 'EvisceratorChunk') || (inflictor is 'EvisceratorProj') ) which = 'Eviscerator';
+		else if ( (inflictor is 'HellblazerRavagerArm') || (inflictor is 'HellblazerWarheadArm') ) which = 'Hellblazer';
+		else if ( (inflictor is 'BigBiospark') || (inflictor is 'BiosparkBall') || (inflictor is 'BiosparkBeamImpact') || (inflictor is 'BiosparkComboImpact') || (inflictor is 'BiosparkComboImpactSub') || (inflictor is 'BiosparkBeam') || (inflictor is 'BiosparkArc') ) which = 'Sparkster';
+		else if ( (inflictor is 'CandyBeam') || (inflictor is 'CandyPop') || (inflictor is 'CandyMagArm') || (inflictor is 'CandyGunProj') || (inflictor is 'CandyMagProj') || (inflictor is 'CandyBulletImpact') ) which = 'CandyGun';
+		else if ( (inflictor is 'YnykronBeam') || (inflictor is 'YnykronImpact') ) which = 'Ynykron';
+		else if ( (inflictor is 'Demolitionist') || (inflictor is 'DemolitionistShockwave') || (inflictor is 'DemolitionistRadiusShockwave') ) which = 'SWWMWeapon';	// hack to assume Demolitionist as weapon
+		if ( !which ) return;
+		for ( int i=0; i<wstats.Size(); i++ )
+		{
+			if ( wstats[i].w != which ) continue;
+			wstats[i].kills++;
+			if ( (favweapon == -1) || (wstats[favweapon].kills < wstats[i].kills) ) favweapon = i;
+			return;
+		}
+		let ws = new("WeaponUsage");
+		ws.w = which;
+		ws.kills = 1;
+		wstats.Push(ws);
+		if ( (favweapon == -1) || (wstats[favweapon].kills < ws.kills) )
+			favweapon = wstats.Size()-1;
+	}
+
+	static clearscope SWWMStats Find( PlayerInfo p )
+	{
+		let ti = ThinkerIterator.Create("SWWMStats",STAT_STATIC);
+		SWWMStats t;
+		while ( t = SWWMStats(ti.Next()) )
+		{
+			if ( t.myplayer != p ) continue;
+			return t;
+		}
+		return null;
+	}
+}
+
+// Scoring
+Class SWWMCredits : Thinker
+{
+	PlayerInfo myplayer;
+	int credits, hcredits;
+
+	static void Give( PlayerInfo p, int amount, int hamount = 0 )
+	{
+		let c = Find(p);
+		if ( !c ) return;
+		if ( c.credits+amount < c.credits ) c.credits = int.max;
+		else c.credits += amount;
+		while ( c.credits > 999999999 )
+		{
+			c.credits -= 1000000000;
+			c.hcredits++;
+		}
+		if ( (c.hcredits+hamount < c.hcredits) || (c.hcredits+hamount > 999999999) ) c.hcredits = 999999999;
+		else c.hcredits += hamount;
+		let s = SWWMStats.Find(p);
+		if ( s && ((c.hcredits > s.hhiscore) || ((c.credits > s.hiscore) && (c.hcredits >= s.hhiscore))) )
+		{
+			s.hiscore = c.credits;
+			s.hhiscore = c.hcredits;
+		}
+	}
+
+	static clearscope bool CanTake( PlayerInfo p, int amount, int hamount = 0 )
+	{
+		let c = Find(p);
+		if ( !c ) return false;
+		int req = amount, hreq = hamount;
+		while ( req > 999999999 )
+		{
+			req -= 1000000000;
+			hreq++;
+		}
+		// waaaaay too much
+		if ( (c.hcredits-hreq < 0) || (c.hcredits-hreq > c.hcredits) ) return false;
+		// too much!
+		if ( ((c.credits-amount < 0) || (c.credits-amount > c.credits)) && (c.hcredits-hreq <= 0) ) return false;
+		return true;
+	}
+
+	static bool Take( PlayerInfo p, int amount, int hamount = 0 )
+	{
+		let c = Find(p);
+		if ( !c ) return false;
+		int req = amount, hreq = hamount;
+		while ( req > 999999999 )
+		{
+			req -= 1000000000;
+			hreq++;
+		}
+		// waaaaay too much
+		if ( (c.hcredits-hreq < 0) || (c.hcredits-hreq > c.hcredits) ) return false;
+		// too much!
+		if ( ((c.credits-amount < 0) || (c.credits-amount > c.credits)) && (c.hcredits-hreq <= 0) ) return false;
+		c.hcredits -= hreq;
+		c.credits -= req;
+		while ( c.credits < 0 )
+		{
+			c.credits += 1000000000;
+			c.hcredits--;
+		}
+		return true;
+	}
+
+	static clearscope int, int Get( PlayerInfo p )
+	{
+		let c = Find(p);
+		if ( !c ) return 0;
+		return c.credits, c.hcredits;
+	}
+
+	static clearscope SWWMCredits Find( PlayerInfo p )
+	{
+		let ti = ThinkerIterator.Create("SWWMCredits",STAT_STATIC);
+		SWWMCredits t;
+		while ( t = SWWMCredits(ti.Next()) )
+		{
+			if ( t.myplayer != p ) continue;
+			return t;
+		}
+		return null;
+	}
+}
+
+// Trading history between players
+Class SWWMTrade
+{
+	int timestamp, type, amt;
+	String other;
+	Class<Inventory> what;
+}
+
+Class SWWMTradeHistory : Thinker
+{
+	PlayerInfo myplayer;
+	Array<SWWMTrade> ent;
+
+	static void RegisterSend( PlayerInfo p, PlayerInfo other, Class<Inventory> what, int amt )
+	{
+		let th = Find(p);
+		if ( !th ) return;
+		SWWMTrade t = new("SWWMTrade");
+		t.timestamp = level.totaltime;
+		t.type = 0;
+		t.other = other.GetUserName();
+		t.what = what;
+		t.amt = amt;
+		th.ent.Push(t);
+	}
+	static void RegisterReceive( PlayerInfo p, PlayerInfo other, Class<Inventory> what, int amt )
+	{
+		let th = Find(p);
+		if ( !th ) return;
+		SWWMTrade t = new("SWWMTrade");
+		t.timestamp = level.totaltime;
+		t.type = 1;
+		t.other = other.GetUserName();
+		t.what = what;
+		t.amt = amt;
+		th.ent.Push(t);
+	}
+
+	static clearscope SWWMTradeHistory Find( PlayerInfo p )
+	{
+		let ti = ThinkerIterator.Create("SWWMTradeHistory",STAT_STATIC);
+		SWWMTradeHistory th;
+		while ( th = SWWMTradeHistory(ti.Next()) )
+		{
+			if ( th.myplayer != p ) continue;
+			return th;
+		}
+		return Null;
+	}
+}
+
+// Lore holder
+enum ELoreTab
+{
+	LORE_ITEM,
+	LORE_PEOPLE,
+	LORE_LORE	// lol
+};
+
+Class SWWMLore
+{
+	String tag, text, assoc;
+	int tab;
+	bool read;
+}
+
+Class SWWMLoreLibrary : Thinker
+{
+	PlayerInfo myplayer;
+	Array<SWWMLore> ent;
+	int lastaddtic;
+
+	bool DirectAdd( String ref )
+	{
+		// restrictions
+		if ( !(gameinfo.gametype&(GAME_Raven|GAME_Strife)) )
+		{
+			if ( ref ~== "Parthoris" ) return true;
+			if ( ref ~== "Sidhe" ) return true;
+			if ( ref ~== "SerpentRiders" ) return true;
+		}
+		if ( !(gameinfo.gametype&(GAME_Hexen|GAME_Strife)) )
+		{
+			if ( ref ~== "Cronos" ) return true;
+			if ( ref ~== "Kirin" ) return true;	// not met
+			if ( ref ~== "Fabricator" ) return true;	// not yet introduced
+		}
+		if ( !(gameinfo.gametype&GAME_Strife) )
+		{
+			if ( ref ~== "TheOrder" ) return true;
+			if ( ref ~== "TheFront" ) return true;
+		}
+		// check if entry is for a collectable
+		for ( int i=0; i<AllActorClasses.Size(); i++ )
+		{
+			let c = (Class<SWWMCollectable>)(AllActorClasses[i]);
+			if ( !c || (c == 'SWWMCollectable') ) continue;
+			let def = GetDefaultByType(c);
+			// skip if we match and it's not for this game
+			if ( (c.GetClassName() != ref) && !(gameinfo.gametype&def.avail) ) return true;
+		}
+		ref = ref.MakeUpper();
+		String tag = String.Format("SWWM_LORETAG_%s",ref);
+		String tab = String.Format("SWWM_LORETAB_%s",ref);
+		String text = String.Format("SWWM_LORETXT_%s",ref);
+		String assoc = String.Format("SWWM_LOREREL_%s",ref);
+		// redirects
+		if ( gameinfo.gametype&GAME_Strife )
+		{
+		}
+		if ( gameinfo.gametype&(GAME_Hexen|GAME_Strife) )
+		{
+			if ( text ~== "SWWM_LORETXT_SAYA" )
+				text = "SWWM_LORETXT_SAYA3";	// married kirin
+			else if ( text ~== "SWWM_LORETXT_ANARUKON" )
+				text = "SWWM_LORETXT_ANARUKON2";	// comments from miyamoto-xanai wedding
+			else if ( text ~== "SWWM_LORETXT_HELL" )
+				text = "SWWM_LORETXT_HELL3";	// met father nostros during the wedding
+			else if ( text ~== "SWWM_LORETXT_GHOULHUNT" )
+				text = "SWWM_LORETXT_GHOULHUNT2";	// met anthon anderken during the
+			else if ( text ~== "SWWM_LORETXT_RAGEKIT" )
+				text = "SWWM_LORETXT_RAGEKIT2";	// kirin's reactions to demo using this item
+			else if ( text ~== "SWWM_LORETXT_SANKAIDERIHA" )
+				text = "SWWM_LORETXT_SANKAIDERIHA2";	// comments about kirin
+			else if ( text ~== "SWWM_LORETXT_SERPENTRIDERS" )
+				text = "SWWM_LORETXT_SERPENTRIDERS2";	// defeated d'sparil
+			else if ( text ~== "SWWM_LORETXT_XANIMEN" )
+				text = "SWWM_LORETXT_XANIMEN2";	// footnote about nuoma
+			else if ( text ~== "SWWM_LORETXT_ZANAVETH2" )
+				text = "SWWM_LORETXT_ZANAVETH22";	// met at wedding
+			else if ( text ~== "SWWM_LORETXT_YNYKRON" )
+				text = "SWWM_LORETXT_YNYKRON2";	// confirmed to harm (but not kill) gods
+		}
+		if ( gameinfo.gametype&(GAME_Raven|GAME_Strife) )
+		{
+			if ( text ~== "SWWM_LORETXT_SAYA" )
+				text = "SWWM_LORETXT_SAYA2";	// dating demo
+			else if ( text ~== "SWWM_LORETXT_AKARILABS" )
+				text = "SWWM_LORETXT_AKARILABS2";	// demo won, akari project announced
+			else if ( text ~== "SWWM_LORETXT_DEMOLITIONIST" )
+				text = "SWWM_LORETXT_DEMOLITIONIST2";	// demo rewarded with maidbot frame
+			else if ( text ~== "SWWM_LORETXT_DOOMGUY" )
+				text = "SWWM_LORETXT_DOOMGUY2";	// he gone
+			else if ( text ~== "SWWM_LORETXT_UAC" )
+				text = "SWWM_LORETXT_UAC2";	// uac "reformed"
+			else if ( text ~== "SWWM_LORETXT_HELL" )
+				text = "SWWM_LORETXT_HELL2";	// invasion was a thing of the past
+			else if ( text ~== "SWWM_LORETXT_NANA" )
+				text = "SWWM_LORETXT_NANA2";	// demo met nana
+			else if ( text ~== "SWWM_LORETXT_ZANAVETH3" )
+				text = "SWWM_LORETXT_ZANAVETH32";	// iagb happened
+			else if ( text ~== "SWWM_LORETXT_BIGSHOT" )
+				text = "SWWM_LORETXT_BIGSHOT2";	// predictions about crimes_m
+		}
+		// check that it's valid
+		if ( StringTable.Localize(tag,false) == tag ) return false;
+		if ( StringTable.Localize(tab,false) == tab )
+		{
+			Console.Printf("Entry \"%s\" defines no tab.",ref);
+			return false;
+		}
+		if ( StringTable.Localize(text,false) == text )
+		{
+			Console.Printf("Entry \"%s\" defines no text.",ref);
+			return false;
+		}
+		// check if existing
+		for ( int i=0; i<ent.Size(); i++ )
+		{
+			if ( ent[i].tag != "$"..tag ) continue;
+			return true;
+		}
+		SWWMLore e = new("SWWMLore");
+		e.tag = "$"..tag;
+		if ( StringTable.Localize(e.tag) == "" )
+		{
+			Console.Printf("Entry \"%s\" has an empty tag.",ref);
+			return true;
+		}
+		String ttab = StringTable.Localize(tab,false);
+		if ( ttab ~== "People" ) e.tab = LORE_PEOPLE;
+		else if ( ttab ~== "Lore" ) e.tab = LORE_LORE;
+		else if ( ttab ~== "Item" ) e.tab = LORE_ITEM;
+		else
+		{
+			Console.Printf("Entry \"%s\" has an incorrect tab setting of \"%s\".",ref,ttab);
+			return true;
+		}
+		e.text = "$"..text;
+		if ( StringTable.Localize(e.text) == "" )
+		{
+			Console.Printf("Entry \"%s\" has empty text.",ref);
+			return true;
+		}
+		e.assoc = "$"..assoc;
+		e.read = false;
+		// "new lore" message
+		if ( (level.maptime > 0) && (gametic > lastaddtic) && (myplayer == players[consoleplayer]) && (!menuactive || (menuactive == Menu.OnNoPause)) && (myplayer.mo is 'Demolitionist') )
+			Console.Printf(StringTable.Localize("$SWWM_NEWLORE"));
+		lastaddtic = gametic;
+		// sorted add
+		String loca = StringTable.Localize(e.tag), locb;
+		int cpa, cpb;
+		for ( int i=0; i<ent.Size(); i++ )
+		{
+			locb = StringTable.Localize(ent[i].tag);
+			if ( locb < loca ) continue;
+			ent.Insert(i,e);
+			return true;
+		}
+		// append otherwise
+		ent.Push(e);
+		return true;
+	}
+
+	static void Add( PlayerInfo p, String ref )
+	{
+		SWWMLoreLibrary ll = Find(p);
+		if ( !ll )
+		{
+			ll = new("SWWMLoreLibrary");
+			ll.ChangeStatNum(STAT_STATIC);
+			ll.myplayer = p;
+		}
+		ll.DirectAdd(ref);
+	}
+
+	void MarkRead( int idx )
+	{
+		if ( (idx < 0) || (idx >= ent.Size()) ) return;
+		if ( !ent[idx].read )
+		{
+			ent[idx].read = true;
+			// add associated entries
+			Array<String> rel;
+			rel.Clear();
+			String assocstr = StringTable.Localize(ent[idx].assoc);
+			assocstr.Split(rel,";",0);
+			for ( int i=0; i<rel.Size(); i++ )
+			{
+				if ( (rel[i] != "") && !DirectAdd(rel[i]) )
+					Console.Printf("Related entry \"%s\" not found, please update LANGUAGE.txt",rel[i]);
+			}
+		}
+	}
+
+	clearscope int FindEntry( String tag )
+	{
+		for ( int i=0; i<ent.Size(); i++ )
+		{
+			if ( ent[i].tag ~== tag )
+				return i;
+		}
+		return -1;
+	}
+
+	static clearscope SWWMLoreLibrary Find( PlayerInfo p )
+	{
+		let ti = ThinkerIterator.Create("SWWMLoreLibrary",STAT_STATIC);
+		SWWMLoreLibrary ll;
+		while ( ll = SWWMLoreLibrary(ti.Next()) )
+		{
+			if ( ll.myplayer != p ) continue;
+			return ll;
+		}
+		return Null;
+	}
+}
+
+// floating scores
+Class SWWMScoreObj : Thinker
+{
+	int xcnt;
+	int xtcolor[5];
+	int xscore[5];
+	String xstr[5];
+	int tcolor;
+	int score;
+	Vector3 pos;
+	int lifespan, initialspan;
+	int starttic, seed, seed2;
+	SWWMScoreObj prev, next;
+	bool damnum;
+	Actor acc;
+
+	static SWWMScoreObj Spawn( int score, Vector3 pos, int tcolor = Font.CR_GOLD, Actor acc = null )
+	{
+		let hnd = SWWMHandler(EventHandler.Find("SWWMHandler"));
+		if ( !hnd ) return null;
+		let o = new("SWWMScoreObj");
+		o.ChangeStatNum(STAT_USER);
+		o.score = score;
+		o.pos = pos;
+		o.lifespan = o.initialspan = 60;
+		o.tcolor = tcolor;
+		o.starttic = level.maptime;
+		o.seed = Random[ScoreBits]();
+		o.seed2 = Random[ScoreBits]();
+		o.damnum = (tcolor == Font.CR_RED) || (tcolor == Font.CR_GREEN) || (tcolor == Font.CR_BLUE);
+		o.xcnt = 0;
+		o.acc = acc;
+		if ( o.damnum )
+		{
+			o.next = hnd.damnums;
+			if ( hnd.damnums ) hnd.damnums.prev = o;
+			hnd.damnums = o;
+			hnd.damnums_cnt++;
+		}
+		else
+		{
+			o.next = hnd.scorenums;
+			if ( hnd.scorenums ) hnd.scorenums.prev = o;
+			hnd.scorenums = o;
+			hnd.scorenums_cnt++;
+		}
+		return o;
+	}
+
+	override void OnDestroy()
+	{
+		let hnd = SWWMHandler(EventHandler.Find("SWWMHandler"));
+		if ( hnd )
+		{
+			if ( damnum )
+			{
+				hnd.damnums_cnt--;
+				if ( !prev ) hnd.damnums = next;
+			}
+			else
+			{
+				hnd.scorenums_cnt--;
+				if ( !prev ) hnd.scorenums = next;
+			}
+			if ( !prev )
+			{
+				if ( next ) next.prev = null;
+			}
+			else
+			{
+				prev.next = next;
+				if ( next ) next.prev = prev;
+			}
+		}
+		Super.OnDestroy();
+	}
+
+	override void Tick()
+	{
+		lifespan--;
+		if ( lifespan <= 0 ) Destroy();
+	}
+}
+
+enum EInterestType
+{
+	INT_Key,
+	INT_Exit
+};
+
+Class SWWMInterest : Thinker
+{
+	int type;
+	Key trackedkey;
+	Line trackedline;
+	Vector3 pos;
+	SWWMInterest prev, next;
+	String keytag;
+
+	static SWWMInterest Spawn( Vector3 pos = (0,0,0), Key thekey = null, Line theline = null )
+	{
+		let hnd = SWWMHandler(EventHandler.Find("SWWMHandler"));
+		if ( !hnd ) return null;
+		if ( (!thekey && !theline) || (thekey && theline) ) return null;
+		let i = new("SWWMInterest");
+		i.ChangeStatNum(STAT_USER);
+		i.trackedkey = thekey;
+		i.trackedline = theline;
+		if ( thekey )
+		{
+			i.type = INT_Key;
+			i.keytag = thekey.GetTag();
+		}
+		else if ( theline ) i.type = INT_Exit;
+		else
+		{
+			i.Destroy();
+			return null;
+		}
+		i.pos = thekey?thekey.Vec3Offset(0,0,thekey.height/2):pos;
+		i.next = hnd.intpoints;
+		if ( hnd.intpoints ) hnd.intpoints.prev = i;
+		hnd.intpoints = i;
+		hnd.intpoints_cnt++;
+		return i;
+	}
+
+	override void OnDestroy()
+	{
+		let hnd = SWWMHandler(EventHandler.Find("SWWMHandler"));
+		if ( hnd )
+		{
+			hnd.intpoints_cnt--;
+			if ( !prev )
+			{
+				hnd.intpoints = next;
+				if ( next ) next.prev = null;
+			}
+			else
+			{
+				prev.next = next;
+				if ( next ) next.prev = prev;
+			}
+		}
+		Super.OnDestroy();
+	}
+
+	override void Tick()
+	{
+		// update
+		if ( (type == INT_Key) && (!trackedkey || trackedkey.Owner) ) Destroy();
+		else if ( trackedkey ) pos = trackedkey.Vec3Offset(0,0,trackedkey.height/2);
+	}
+}
+
+Class SWWMItemSense : Thinker
+{
+	Inventory item;
+	String tag;
+	int updated;
+	Demolitionist parent;
+	SWWMItemSense prev, next;
+	Vector3 pos;
+
+	static SWWMItemSense Spawn( Demolitionist parent, Inventory item )
+	{
+		if ( !parent || !item ) return null;
+		// only refresh the updated time if existing
+		for ( SWWMItemSense s=parent.itemsense; s; s=s.next )
+		{
+			if ( s.item != item ) continue;
+			s.updated = level.maptime+35;
+			s.pos = item.Vec3Offset(0,0,item.height);
+			return s;
+		}
+		let i = new("SWWMItemSense");
+		i.ChangeStatNum(STAT_USER);
+		i.item = item;
+		i.parent = parent;
+		i.updated = level.maptime+35;
+		i.UpdateTag();
+		i.pos = item.Vec3Offset(0,0,item.height);
+		i.next = parent.itemsense;
+		if ( parent.itemsense ) parent.itemsense.prev = i;
+		parent.itemsense = i;
+		parent.itemsense_cnt++;
+		return i;
+	}
+
+	void UpdateTag()
+	{
+		if ( !item ) return;
+		// certain ammo types use the pickup message as it's amount-aware
+		if ( (item is 'RedShell') || (item is 'GreenShell')
+			|| (item is 'WhiteShell') || (item is 'BlueShell')
+			|| (item is 'BlackShell') || (item is 'PurpleShell')
+			|| (item is 'GoldShell') || (item is 'EvisceratorShell')
+			|| (item is 'HellblazerMissiles')|| (item is 'HellblazerCrackshots')
+			|| (item is 'HellblazerRavagers')|| (item is 'HellblazerWarheads') )
+			tag = item.PickupMessage();
+		else tag = item.GetTag();
+	}
+
+	override void OnDestroy()
+	{
+		if ( parent )
+		{
+			parent.itemsense_cnt--;
+			if ( !prev )
+			{
+				parent.itemsense = next;
+				if ( next ) next.prev = null;
+			}
+			else
+			{
+				prev.next = next;
+				if ( next ) next.prev = prev;
+			}
+		}
+		Super.OnDestroy();
+	}
+
+	override void Tick()
+	{
+		if ( !parent )
+		{
+			Destroy();
+			return;
+		}
+		// expire
+		if ( level.maptime > updated+70 ) Destroy();
+	}
+}
+
+// enemy combat tracker
+Class SWWMCombatTracker : Thinker
+{
+	Actor mytarget;
+	String mytag;
+	int updated, lasthealth, maxhealth;
+	DynamicValueInterpolator intp;
+	Vector3 pos, prevpos, oldpos, oldprev;
+	PlayerInfo myplayer;
+	SWWMCombatTracker prev, next;
+	bool legged;
+	int tcnt;
+	double height;
+	transient CVar funtags;
+
+	void UpdateTag()
+	{
+		if ( !funtags ) funtags = CVar.GetCVar('swwm_funtags',players[consoleplayer]);
+		if ( mytarget && (mytarget.player || mytarget.bISMONSTER || (mytarget is 'BossBrain')) )
+		{
+			String realtag = funtags.GetBool()?SWWMUtility.GetFunTag(mytarget,"AWESOME IT'S PENIS"):mytarget.GetTag("AWESOME IT'S PENIS");
+			if ( realtag == "AWESOME IT'S PENIS" )
+			{
+				realtag = mytarget.GetClassName();
+				SWWMUtility.BeautifyClassName(realtag);
+			}
+			mytag = mytarget.player?(mytarget.player.mo!=mytarget)?String.Format(StringTable.Localize("$FN_VOODOO"),mytarget.player.GetUserName()):mytarget.player.GetUserName():realtag;
+		}
+		else mytag = "";
+	}
+
+	static SWWMCombatTracker Spawn( Actor target )
+	{
+		let hnd = SWWMHandler(EventHandler.Find("SWWMHandler"));
+		if ( !hnd ) return null;
+		SWWMCombatTracker t;
+		for ( t=hnd.trackers; t; t=t.next )
+		{
+			if ( t.mytarget != target ) continue;
+			return t;
+		}
+		t = new("SWWMCombatTracker");
+		t.ChangeStatNum(STAT_USER);
+		t.mytarget = target;
+		t.UpdateTag();
+		if ( target.player )
+		{
+			t.lasthealth = target.health;
+			t.maxhealth = target.default.health;
+		}
+		else t.lasthealth = t.maxhealth = target.health;
+		t.updated = int.min;
+		t.height = t.mytarget.height;
+		t.pos = level.Vec3Offset(target.pos,(0,0,t.height));
+		t.prevpos = level.Vec3Offset(target.prev,(0,0,t.height));
+		t.oldpos = target.pos;
+		t.oldprev = target.prev;
+		t.intp = DynamicValueInterpolator.Create(t.lasthealth,.5,1,100);
+		t.myplayer = target.player;
+		t.next = hnd.trackers;
+		if ( hnd.trackers ) hnd.trackers.prev = t;
+		hnd.trackers = t;
+		hnd.trackers_cnt++;
+		return t;
+	}
+
+	override void OnDestroy()
+	{
+		let hnd = SWWMHandler(EventHandler.Find("SWWMHandler"));
+		if ( hnd )
+		{
+			hnd.trackers_cnt--;
+			if ( !prev )
+			{
+				hnd.trackers = next;
+				if ( next ) next.prev = null;
+			}
+			else
+			{
+				prev.next = next;
+				if ( next ) next.prev = prev;
+			}
+		}
+		Super.OnDestroy();
+	}
+
+	override void Tick()
+	{
+		if ( swwm_notrack )
+		{
+			Destroy();
+			return;
+		}
+		// don't update
+		if ( mytarget && mytarget.bDORMANT )
+			return;
+		// update
+		if ( mytarget && ((mytarget.pos != oldpos) || (mytarget.prev != oldprev)) )
+		{
+			oldpos = mytarget.pos;
+			oldprev = mytarget.prev;
+			pos = level.Vec3Offset(mytarget.pos,(0,0,height));
+			prevpos = level.Vec3Offset(mytarget.prev,(0,0,height));
+		}
+		if ( !mytarget || (mytarget.Health <= 0) )
+		{
+			// we're done
+			if ( updated > level.maptime ) updated = level.maptime;
+			lasthealth = 0;
+			intp.Update(lasthealth);
+			if ( level.maptime > updated+35 ) Destroy();
+			return;
+		}
+		// only update height while alive
+		height = mytarget.height;
+		tcnt++;
+		if ( (tcnt == 1) && !mytarget.player )
+		{
+			// post-spawn health inflation check
+			if ( lasthealth > maxhealth ) maxhealth = lasthealth;
+		}
+		if ( (tcnt == 6) && !mytarget.player )
+		{
+			// legendoom check
+			for ( Inventory i=mytarget.inv; i; i=i.inv )
+			{
+				if ( i.GetClassName() != "LDLegendaryMonsterToken" ) continue;
+				legged = true;
+				// adjust for health inflation
+				if ( lasthealth > maxhealth ) maxhealth = lasthealth;
+			}
+		}
+		lasthealth = mytarget.Health;
+		intp.Update(lasthealth);
+		if ( (mytarget.bISMONSTER || mytarget.player) && !mytarget.bINVISIBLE )
+		{
+			bool straifu = false;
+			if ( (gameinfo.gametype&GAME_Strife) && (!mytarget.bINCOMBAT && !mytarget.bJUSTATTACKED) || (mytarget is 'Beggar') || (mytarget is 'Peasant') )
+				straifu = true;
+			// enemies within 2000mu that have us as target
+			if ( !straifu && mytarget.target && (mytarget.target.Health > 0) && (mytarget.target.player == players[consoleplayer]) && (mytarget.Vec3To(mytarget.target).length() < 2000) && mytarget.CheckSight(mytarget.target) ) updated = level.maptime+70;
+			// players (but not voodoo dolls), always visible in sp/coop
+			if ( !deathmatch && mytarget.player && (mytarget.player.mo == mytarget) ) updated = level.maptime+35;
+			// any visible enemies within 600mu
+			if ( (mytarget.Vec3To(players[consoleplayer].mo).length() < 600) && players[consoleplayer].mo.CheckSight(mytarget) ) updated = level.maptime;
+		}
+		else if ( mytarget is 'BossBrain' )
+		{
+			// teh romero, only if visible
+			if ( (mytarget.Vec3To(players[consoleplayer].mo).length() < 600) && players[consoleplayer].mo.CheckSight(mytarget) ) updated = level.maptime;
+		}
+	}
+}
+
+// Korax instakill handler
+Class UglyBoyGetsFuckedUp : Thinker
+{
+	bool wedone;
+
+	override void Tick()
+	{
+		if ( wedone ) return;
+		if ( level.killed_monsters < level.total_monsters )
+		{
+			// stop portal door
+			int sidx = level.CreateSectorTagIterator(145).Next();
+			if ( sidx == -1 ) return;
+			Sector door = level.Sectors[sidx];
+			let ti = ThinkerIterator.Create("SectorEffect");
+			SectorEffect se;
+			while ( se = SectorEffect(ti.Next()) )
+			{
+				if ( se.GetSector() != door ) continue;
+				se.Destroy();
+				door.StopSoundSequence(CHAN_VOICE);
+			}
+			return;
+		}
+		wedone = true;
+		level.ExecuteSpecial(Door_Open,null,null,false,145,8);
+		Destroy();
+	}
+}
+
+// Gotta force it someway
+Class ForcedFallerDamager : Thinker
+{
+	Actor mybody, instigator;
+	double lastvelz;
+	bool wasflying;
+
+	static void TrackBody( Actor b )
+	{
+		if ( !b ) return;
+		let ffd = new("ForcedFallerDamager");
+		ffd.ChangeStatNum(STAT_USER);
+		ffd.mybody = b;
+		ffd.lastvelz = b.vel.z;
+		ffd.wasflying = ((b.pos.z>b.floorz)&&b.TestMobjZ());
+	}
+	static void SetInstigator( Actor b, Actor whomst )
+	{
+		if ( !b || !whomst ) return;
+		let ti = ThinkerIterator.Create("ForcedFallerDamager",STAT_USER);
+		ForcedFallerDamager ffd;
+		while ( ffd = ForcedFallerDamager(ti.Next()) )
+		{
+			if ( ffd.mybody != b ) continue;
+			ffd.instigator = whomst;
+			break;
+		}
+	}
+	override void Tick()
+	{
+		if ( !swwm_doomfall || !mybody )
+		{
+			Destroy();
+			return;
+		}
+		bool isflying = ((mybody.pos.z>mybody.floorz)&&mybody.TestMobjZ())||mybody.bNOGRAVITY;
+		if ( wasflying && !isflying && (lastvelz < -23) && !level.monsterfallingdamage && !(mybody.floorsector.flags&Sector.SECF_NOFALLINGDAMAGE) )
+		{
+			// big hurt
+			int dmg;
+			if ( lastvelz < -35 ) dmg = Actor.TELEFRAG_DAMAGE;
+			else dmg = int((-lastvelz-23)*6);
+			mybody.DamageMobj(instigator,instigator,dmg,'Falling');
+		}
+		if ( !isflying && wasflying ) instigator = null;
+		wasflying = isflying;
+		lastvelz = mybody.vel.z;
+		// wait until body is dead
+		if ( mybody.Health > 0 ) return;
+		Destroy();
+	}
+}
+
+Class SWWMDamageAccumulator : Thinker
+{
+	Actor victim, inflictor, source;
+	Array<Int> amounts;
+	int total;
+	Name type;
+	bool dontgib;
+	int flags;
+
+	override void Tick()
+	{
+		Super.Tick();
+		// so many damn safeguards in this
+		if ( !victim )
+		{
+			Destroy();
+			return;
+		}
+		int gibhealth = victim.GetGibHealth();
+		// おまえはもう死んでいる
+		if ( (victim.health-total <= gibhealth) && !dontgib )
+		{
+			// safeguard for inflictors that have somehow ceased to exist, which apparently STILL CAN HAPPEN
+			if ( inflictor ) inflictor.bEXTREMEDEATH = true;
+			else type = 'Extreme';
+		}
+		// make sure accumulation isn't reentrant
+		if ( inflictor && (inflictor is 'EvisceratorChunk') ) inflictor.bAMBUSH = true;
+		// 何？
+		for ( int i=0; i<amounts.Size(); i++ )
+		{
+			if ( !victim ) break;
+			victim.DamageMobj(inflictor,source,amounts[i],type,DMG_THRUSTLESS|flags);
+		}
+		// clean up
+		if ( inflictor )
+		{
+			if ( inflictor is 'EvisceratorChunk' ) inflictor.bAMBUSH = false;
+			inflictor.bEXTREMEDEATH = false;
+		}
+		Destroy();
+	}
+
+	static void Accumulate( Actor victim, int amount, Actor inflictor, Actor source, Name type, bool dontgib = false, int flags = 0 )
+	{
+		if ( !victim ) return;
+		let ti = ThinkerIterator.Create("SWWMDamageAccumulator",STAT_USER);
+		SWWMDamageAccumulator a, match = null;
+		while ( a = SWWMDamageAccumulator(ti.Next()) )
+		{
+			if ( a.victim != victim ) continue;
+			match = a;
+			break;
+		}
+		if ( !match )
+		{
+			match = new("SWWMDamageAccumulator");
+			match.ChangeStatNum(STAT_USER);
+			match.victim = victim;
+			match.amounts.Clear();
+		}
+		match.amounts.Push(amount);
+		match.total += amount;
+		match.inflictor = inflictor;
+		match.source = source;
+		match.type = type;
+		match.dontgib = dontgib;
+		match.flags = flags;
+	}
+
+	static clearscope int GetAmount( Actor victim )
+	{
+		let ti = ThinkerIterator.Create("SWWMDamageAccumulator",STAT_USER);
+		SWWMDamageAccumulator a, match = null;
+		while ( a = SWWMDamageAccumulator(ti.Next()) )
+		{
+			if ( a.victim != victim ) continue;
+			return a.total;
+		}
+		return 0;
+	}
+}

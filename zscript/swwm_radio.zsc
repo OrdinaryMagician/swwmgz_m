@@ -1,0 +1,45 @@
+// TODO code for the in-game radio
+
+Class Playlist
+{
+	Array<String> trk;	// track titles
+	String name;	// playlist name
+	String fmt;	// format string for track files
+}
+
+Class SWWMRadioHandler : EventHandler
+{
+	Array<Playlist> lists;
+	ui int curlist, curtrack;
+	transient ui CVar shuffle, active;
+	ui Array<Int> shuffledorder;	// current playlist track indices, shuffled
+	ui String oldmus;
+
+	override void OnRegister()
+	{
+		// load playlists from swwmradio.txt files
+	}
+
+	ui void NextTrack()
+	{
+		// advance the playlist
+		// if we reach the end, reshuffle if needed
+	}
+
+	ui void SetTrack( int list, int idx )
+	{
+		// pick a specific track from the playlist
+		// reshuffle if needed
+	}
+
+	override void UiTick()
+	{
+		if ( !active ) active = CVar.GetCVar('swwm_radio',players[consoleplayer]);
+		if ( active.GetBool() && (musplaying.name != oldmus) )
+		{
+			// advance the playlist
+			NextTrack();
+		}
+		oldmus = musplaying.name;
+	}
+}

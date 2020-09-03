@@ -1,5 +1,32 @@
 HardwareShader PostProcess beforebloom
 {
+	Name "WaterWarp"
+	Shader "shaders/glsl/WaterWarp.fp" 330
+	Texture warptex "textures/warptex.png"
+	Texture fluidtex "textures/wetwarp.png"
+	Uniform float dfact
+	Uniform float timer
+}
+HardwareShader PostProcess beforebloom
+{
+	Name "LavaWarp"
+	Shader "shaders/glsl/LavaWarp.fp" 330
+	Texture warptex "textures/warptex.png"
+	Texture fluidtex "textures/lavawarp.png"
+	Uniform float dfact
+	Uniform float timer
+}
+HardwareShader PostProcess beforebloom
+{
+	Name "SlimeWarp"
+	Shader "shaders/glsl/SlimeWarp.fp" 330
+	Texture warptex "textures/warptex.png"
+	Texture fluidtex "textures/slimewarp.png"
+	Uniform float dfact
+	Uniform float timer
+}
+HardwareShader PostProcess beforebloom
+{
 	Name "ZoomBlur"
 	Shader "shaders/glsl/ZoomBlur.fp" 330
 	Uniform float Str

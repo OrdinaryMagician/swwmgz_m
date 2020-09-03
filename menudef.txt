@@ -34,6 +34,10 @@ OptionMenu "SWWMOptionMenu"
 	StaticText " "
 	StaticText "$SWWM_OTITLE", "Gold"
 	Option "$SWWM_BLOOD", "swwm_blood", "YesNo"
+	ScaleSlider "$SWWM_MAXBLOOD", "swwm_maxblood", -1, 1000, 1, "$SWWM_NONE", "$SWWM_UNLIMITED"
+	ScaleSlider "$SWWM_MAXGIBS", "swwm_maxgibs", -1, 1000, 1, "$SWWM_NONE", "$SWWM_UNLIMITED"
+	ScaleSlider "$SWWM_MAXCASINGS", "swwm_maxcasings", -1, 1000, 1, "$SWWM_NONE", "$SWWM_UNLIMITED"
+	ScaleSlider "$SWWM_MAXDEBRIS", "swwm_maxdebris", -1, 1000, 1, "$SWWM_NONE", "$SWWM_UNLIMITED"
 	Slider "$SWWM_FLASH", "swwm_flashstrength", 0.0, 1.0, 0.1, 1
 	Slider "$SWWM_HUDMARGIN", "swwm_hudmargin", 0, 40, 1, 0
 	Slider "$SWWM_MAXMSG", "swwm_maxshown", 1, 10, 1, 0
@@ -146,6 +150,7 @@ OptionMenu "SWWMCreditsMenu"
 	StaticText "Substance20 (@S20TBL)", "Gold"
 	StaticText "Captain J (@Jho7835)", "Gold"
 	StaticText "Redead-ITA", "Gold"
+	StaticText "Sgt. Shivers (@Sgt_Shivers_)", "Gold"
 	StaticText " "
 	StaticText "$SWWM_CLOCAL", "Red"
 	StaticText " "

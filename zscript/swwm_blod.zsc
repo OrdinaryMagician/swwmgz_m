@@ -22,6 +22,7 @@ Class mkBlood : Actor
 		b.args[0] = str;
 		if ( target.bloodcolor ) b.SetShade(Color(target.bloodcolor.r/2,target.bloodcolor.g/2,target.bloodcolor.b/2));
 		else b.SetShade(Color(80,0,0));
+		b.CopyBloodColor(target);
 	}
 	States
 	{
@@ -82,12 +83,13 @@ Class mkBloodSpray : Actor
 		Vector3 setofs;
 		setofs = (cos(target.angle)*attachofs.x+sin(target.angle)*attachofs.y,sin(target.angle)*attachofs.x-cos(target.angle)*attachofs.y,attachofs.z);
 		SetOrigin(level.Vec3Offset(target.pos,setofs),false);
-		int sz = args[0];
+		int sz = max(1,args[0]/2);
 		double ang, pt;
-		for ( int i=0; i<max(1,sz/2); i++ )
+		for ( int i=0; i<sz; i++ )
 		{
 			let d = Spawn("mkBloodDrop",pos);
 			d.SetShade(fillcolor);
+			d.CopyBloodColor(self);
 			ang = baseang+target.angle+FRandom[Blood](-15.,15.)*str;
 			pt = pitch+FRandom[Blood](-15.,15.)*str;
 			Vector3 dir = (cos(pt)*cos(ang),cos(pt)*sin(ang),-sin(pt));
@@ -95,78 +97,160 @@ Class mkBloodSpray : Actor
 			d.scale *= str*.15*FRandom[Blood](.6,1.4);
 		}
 		bool flying = IsTargetFlying();
-		if ( !flying ) str *= 1.-(.4/sz);
+		if ( !flying ) str *= 1.-(.3/sz);
 		if ( (str <= .05) || ((cnt-- <= 0) && !flying) ) Destroy();
 	}
 }
 
 // drop of salsa
-// becomes a flatsprite on crash
+// becomes a decal on crash
 Class mkBloodDrop : Actor
 {
-	int deadtimer;
+	bool killme;
 	bool dead;
+	mkBloodDrop prevblod, nextblod;
 
 	Default
 	{
 		+MISSILE;
+		+NOBLOCKMAP;
 		+DROPOFF;
 		+NOTELEPORT;
 		+THRUACTORS;
 		+FORCEXYBILLBOARD;
 		+ROLLSPRITE;
 		+ROLLCENTER;
+		+NOINTERACTION;
 		Scale .35;
 		Radius 2;
 		Height 2;
 		Mass 1;
 		RenderStyle "Shaded";
 	}
+	// try to reduce overhead as much as possible with this
 	override void Tick()
 	{
-		Super.Tick();
-		if ( waterlevel > 0 ) A_FadeOut();
+		prev = pos;	// for interpolation
+		if ( isFrozen() ) return;
+		if ( killme ) A_FadeOut(.01);
 		if ( dead )
 		{
-			deadtimer++;
-			if ( deadtimer > 350 ) A_FadeOut(.01);
-			return;
+			// do nothing but follow floor movement and eventually fade out
+			if ( pos.z != floorz )
+			{
+				SetZ(floorz);
+				UpdateWaterLevel(false);
+			}
+			if ( (waterlevel > 0) || GetFloorTerrain().isliquid )
+			{
+				scale *= 1.005;
+				A_FadeOut(.01);
+			}
+			return;	// we don't need to update states when we're dead
 		}
-		scale *= .99;
-		if ( scale.x <= 0. ) Destroy();
+		else
+		{
+			FCheckPosition tm;
+			// gravitational pull
+			vel.z -= GetGravity();
+			// movement subdivision (these damn things are tiny
+			int steps = 8;
+			while ( (abs(vel.x) >= radius*steps) || (abs(vel.y) >= radius*steps) || (abs(vel.z) >= height*steps) )
+				steps++;
+			bool domove = (vel!=(0,0,0))||((pos.z!=floorz)&&(pos.z!=ceilingz-height));
+			if ( domove )
+			{
+				Vector3 steppy = vel/steps;
+				int changexy = steppy.X||steppy.Y;
+				for ( int i=0; i<steps; i++ )
+				{
+					if ( changexy && !TryMove(Vec2Offset(steppy.x,steppy.y),1,false,tm) )
+					{
+						let l = tm.CeilingLine;
+						if ( l && l.backsector && l.backsector.GetTexture(1) == skyflatnum )
+						{
+							let posr = PosRelative(l.backsector);
+							if ( pos.z >= l.backsector.ceilingplane.ZAtPoint(posr.xy) )
+							{
+								Destroy();
+								return;
+							}
+						}
+						// hit wall
+						Vector3 dir = vel.unit();
+						TraceBleedAngle(20,atan2(dir.y,dir.x),asin(-dir.z));
+						A_StartSound("misc/blooddrop",volume:.1);
+						Destroy();
+						return;
+					}
+					AddZ(steppy.z);
+					UpdateWaterLevel();
+					if ( pos.z <= floorz )
+					{
+						if ( floorpic == skyflatnum )
+						{
+							Destroy();
+							return;
+						}
+						// landed on floor
+						SetZ(floorz);
+						HitFloor();
+						A_StartSound("misc/blooddrop",volume:.1);
+						dead = true;
+						SWWMUtility.SetToSlope(self,FRandom[Blood](0,360));
+						frame = Random[Blood](5,8);
+						return;
+					}
+					if ( pos.z+height > ceilingz )
+					{
+						if ( ceilingpic == skyflatnum )
+						{
+							Destroy();
+							return;
+						}
+						// hit the ceiling
+						// TODO stick to it and drop more blood
+						A_StartSound("misc/blooddrop",volume:.1);
+						Destroy();
+						return;
+					}
+					CheckPortalTransition();
+				}
+			}
+			if ( waterlevel > 0 ) A_FadeOut();
+			scale *= .99;
+			if ( scale.x <= 0. )
+			{
+				Destroy();
+				return;
+			}
+		}
+		if ( !CheckNoDelay() || (tics == -1) ) return;
+		if ( tics > 0 ) tics--;
+		while ( !tics )
+		{
+			if ( !SetState(CurState.NextState) )
+				return;
+		}
 	}
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
-		deadtimer = Random[Blood](-20,20);
+		SWWMGoreHandler.QueueBlod(self);
 		int jumps = Random[Blood](0,3);
 		state dest = ResolveState("Spawn");
 		SetState(dest+jumps);
+	}
+	override void OnDestroy()
+	{
+		SWWMGoreHandler.DeQueueBlod(self);
+		Super.OnDestroy();
 	}
 	States
 	{
 	Spawn:
 		SBLD ABCD 2;
 		Loop;
-	Death:
-		SBLD E 0
-		{
-			invoker.dead = true;
-			A_StartSound("misc/blooddrop",volume:.1);
-			if ( pos.z > floorz )
-			{
-				// TODO trace decal
-				return ResolveState("Null");
-			}
-			SWWMUtility.SetToSlope(self,FRandom[Blood](0,360));
-			return ResolveState(null);
-		}
-		SBLD # -1
-		{
-			A_Stop();
-			frame = Random[Blood](5,8);
-		}
-		Stop;
 	}
 }
 
@@ -226,11 +310,12 @@ Class mkBloodSmoke2 : mkBloodSmoke
 // inspired by Lud's Universal Gibs
 Class mkFlyingGib : Actor
 {
-	int deadtimer;
+	bool killme;
 	int lastbleed;
 	color shadecol;
 	bool bleeding;
 	double rollvel;
+	mkFlyingGib prevmeat, nextmeat;
 
 	override void PostBeginPlay()
 	{
@@ -240,33 +325,49 @@ Class mkFlyingGib : Actor
 		double pt = FRandom[Gibs](-60,20);
 		Vector3 dir = (cos(pt)*cos(ang),cos(pt)*sin(ang),sin(-pt));
 		vel += dir*FRandom[Gibs](5.,20.);
-		if ( master ) vel += master.vel*1.5;
-		deadtimer = Random[Gibs](-20,20);
+		if ( master )
+		{
+			vel += master.vel*1.5;
+			CopyBloodColor(master);
+		}
 		rollvel = FRandom[Gibs](10,50)*RandomPick[Gibs](-1,1);
 		scale *= FRandom[Gibs](.5,1.5);
 		if ( master && master.bloodcolor ) shadecol = Color(master.bloodcolor.r/2,master.bloodcolor.g/2,master.bloodcolor.b/2);
 		else shadecol = Color(80,0,0);
 		bleeding = true;
 		if ( Random[Blood](0,1) ) bXFlip = true;
+		SWWMGoreHandler.QueueMeat(self);
+	}
+
+	override void OnDestroy()
+	{
+		SWWMGoreHandler.DeQueueMeat(self);
+		Super.OnDestroy();
 	}
 
 	override void Tick()
 	{
 		Super.Tick();
 		if ( isFrozen() ) return;
+		if ( killme ) A_FadeOut(.01);
+		if ( CurState == ResolveState("Death2") )
+		{
+			if ( vel.length() < .1 )
+				bleeding = false;
+			return;
+		}
+		roll += rollvel;
+		if ( waterlevel > 0 )
+		{
+			rollvel *= .98;
+			vel.xy *= .98;
+			return;
+		}
 		if ( bleeding && !Random[Blood](0,3) )
 		{
 			let s = Spawn("mkBloodSmoke",pos);
 			s.SetShade(shadecol);
 		}
-		if ( CurState == ResolveState("Death2") )
-		{
-			if ( vel.length() < .1 ) bleeding = false;
-			deadtimer++;
-			if ( deadtimer > 300 ) A_FadeOut(.01);
-			return;
-		}
-		roll += rollvel;
 	}
 
 	override bool CanCollideWith(Actor other, bool passive)
@@ -280,8 +381,8 @@ Class mkFlyingGib : Actor
 		double ang;
 		double pt;
 		Vector3 dir;
-		if ( level.maptime <= invoker.lastbleed ) return;
-		invoker.lastbleed = level.maptime;
+		if ( invoker.lastbleed > level.maptime ) return;
+		invoker.lastbleed = level.maptime+5;
 		for ( int i=0; i<8; i++ )
 		{
 			let b = Spawn("mkBloodDrop",pos);
@@ -292,6 +393,7 @@ Class mkFlyingGib : Actor
 			b.scale *= 2.0;
 			b.SetShade(invoker.shadecol);
 		}
+		TraceBleedAngle(int(vel.length()),angle+180,-pitch);
 	}
 
 	Default
@@ -364,6 +466,7 @@ Class mkGibber : Actor
 		{
 			[dummy, a] = A_SpawnItemEx("mkFlyingGib",FRandom[Gibs](-.5,.5)*radius,FRandom[Gibs](-.5,.5)*radius,FRandom[Gibs](.1,.9)*height,flags:SXF_ABSOLUTEANGLE|SXF_USEBLOODCOLOR);
 			a.translation = translation;
+			a.CopyBloodColor(self);
 			a.scale *= scale.x;
 			a.master = gibbed;
 		}
@@ -376,6 +479,7 @@ Class mkGibber : Actor
 			a.vel = dir*FRandom[Gibs](8.,24.);
 			a.scale *= 2.+FRandom[Gibs](.3,1.6);
 			a.SetShade(shadecol);
+			a.CopyBloodColor(self);
 		}
 		reactiontime--;
 	}
@@ -386,6 +490,7 @@ Class mkGibber : Actor
 		reactiontime = int(min(max(radius,height)/10,8));
 		if ( gibbed && gibbed.bloodcolor ) shadecol = Color(gibbed.bloodcolor.r/2,gibbed.bloodcolor.g/2,gibbed.bloodcolor.b/2);
 		else shadecol = Color(80,0,0);
+		if ( gibbed ) CopyBloodColor(gibbed);
 	}
 
 	override void Tick()
@@ -393,10 +498,10 @@ Class mkGibber : Actor
 		if ( isFrozen() ) return;
 		if ( !gibbed )
 		{
-			SetOrigin(level.Vec3Offset(pos,vel),true);
+			SetOrigin(level.Vec3Offset(pos,vel),false);
 			return;
 		}
-		SetOrigin(gibbed.pos,true);
+		SetOrigin(gibbed.pos,false);
 		scale = gibbed.scale;
 		vel = gibbed.vel;
 		if ( delay > 0 )
@@ -483,6 +588,105 @@ Class CorpseFallTracker : Thinker
 
 Class SWWMGoreHandler : EventHandler
 {
+	mkBloodDrop blods, blods_end;
+	int blods_cnt, oldmaxblood;
+	mkFlyingGib meats, meats_end;
+	int meats_cnt, oldmaxgibs;
+
+	override void WorldLoaded( WorldEvent e )
+	{
+		// recheck queues in case limits changed
+		while ( blods && (blods_cnt > swwm_maxblood) )
+			DeQueueBlod(blods);
+		while ( meats && (meats_cnt > swwm_maxgibs) )
+			DeQueueMeat(meats);
+	}
+
+	static void QueueBlod( mkBloodDrop b )
+	{
+		let hnd = SWWMGoreHandler(EventHandler.Find("SWWMGoreHandler"));
+		if ( !hnd ) return;
+		hnd.blods_cnt++;
+		if ( !hnd.blods )
+		{
+			// this is the initial one
+			hnd.blods = b;
+			hnd.blods_end = b;
+		}
+		else
+		{
+			hnd.blods_end.nextblod = b;
+			b.prevblod = hnd.blods_end;
+			hnd.blods_end = b;
+		}
+		while ( hnd.blods && (swwm_maxblood >= 0) && (hnd.blods_cnt > swwm_maxblood) )
+			DeQueueBlod(hnd.blods);
+	}
+	static void DeQueueBlod( mkBloodDrop b )
+	{
+		let hnd = SWWMGoreHandler(EventHandler.Find("SWWMGoreHandler"));
+		if ( !hnd || !hnd.blods ) return;
+		if ( (hnd.blods != b) && !b.prevblod && !b.nextblod ) return;
+		hnd.blods_cnt--;
+		if ( !b.prevblod ) hnd.blods = b.nextblod;
+		else b.prevblod.nextblod = b.nextblod;
+		if ( b == hnd.blods_end ) hnd.blods_end = b.prevblod;
+		if ( b.nextblod ) b.nextblod.prevblod = b.prevblod;
+		b.killme = true;
+		b.prevblod = null;
+		b.nextblod = null;
+	}
+	static void QueueMeat( mkFlyingGib m )
+	{
+		let hnd = SWWMGoreHandler(EventHandler.Find("SWWMGoreHandler"));
+		if ( !hnd ) return;
+		hnd.meats_cnt++;
+		if ( !hnd.meats )
+		{
+			// this is the initial one
+			hnd.meats = m;
+			hnd.meats_end = m;
+		}
+		else
+		{
+			hnd.meats_end.nextmeat = m;
+			m.prevmeat = hnd.meats_end;
+			hnd.meats_end = m;
+		}
+		while ( hnd.meats && (swwm_maxgibs >= 0) && (hnd.meats_cnt > swwm_maxgibs) )
+			DeQueueMeat(hnd.meats);
+	}
+	static void DeQueueMeat( mkFlyingGib m )
+	{
+		let hnd = SWWMGoreHandler(EventHandler.Find("SWWMGoreHandler"));
+		if ( !hnd || !hnd.meats ) return;
+		if ( (hnd.meats != m) && !m.prevmeat && !m.nextmeat ) return;
+		hnd.meats_cnt--;
+		if ( !m.prevmeat ) hnd.meats = m.nextmeat;
+		else m.prevmeat.nextmeat = m.nextmeat;
+		if ( m == hnd.meats_end ) hnd.meats_end = m.prevmeat;
+		if ( m.nextmeat ) m.nextmeat.prevmeat = m.prevmeat;
+		m.killme = true;
+		m.prevmeat = null;
+		m.nextmeat = null;
+	}
+
+	override void WorldTick()
+	{
+		if ( swwm_maxblood != oldmaxblood )
+		{
+			while ( blods && (swwm_maxblood >= 0) && (blods_cnt > swwm_maxblood) )
+				DeQueueBlod(blods);
+		}
+		if ( swwm_maxgibs != oldmaxgibs )
+		{
+			while ( meats && (swwm_maxgibs >= 0) && (meats_cnt > swwm_maxgibs) )
+				DeQueueMeat(meats);
+		}
+		oldmaxblood = swwm_maxblood;
+		oldmaxgibs = swwm_maxgibs;
+	}
+
 	override void CheckReplacement( ReplaceEvent e )
 	{
 		// only replace vanilla blood if no other gore mod is doing it
@@ -516,6 +720,9 @@ Class SWWMGoreHandler : EventHandler
 	override void WorldThingDamaged( WorldEvent e )
 	{
 		if ( e.Thing.Health > 0 ) return;
+		// no gib if it was erased
+		if ( e.DamageType == 'YnykronDeath' || e.DamageType == 'YnykronAltDeath' )
+			return;
 		// only do special handling if they use our blood
 		if ( (e.Thing.GetBloodType(0) != "mkBlood") || e.Thing.bNOBLOOD )
 			return;

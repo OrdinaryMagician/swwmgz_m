@@ -5,11 +5,12 @@ Model "RedShellCasing"
 	Model 0 "ShotShell_d.3d"
 	Skin 0 "Shell_Normal_Used.png"
 	Scale 0.15 0.15 0.15
-	ZOffset 1
 	USEACTORPITCH
 	USEACTORROLL
 
 	FrameIndex XZW1 A 0 0
+	ZOffset 1
+	FrameIndex XZW1 B 0 0
 }
 Model "GreenShellCasing"
 {
@@ -18,11 +19,12 @@ Model "GreenShellCasing"
 	Model 0 "ShotShell_d.3d"
 	Skin 0 "Shell_Slug_Used.png"
 	Scale 0.15 0.15 0.15
-	ZOffset 1
 	USEACTORPITCH
 	USEACTORROLL
 
 	FrameIndex XZW1 A 0 0
+	ZOffset 1
+	FrameIndex XZW1 B 0 0
 }
 Model "WhiteShellCasing"
 {
@@ -31,11 +33,12 @@ Model "WhiteShellCasing"
 	Model 0 "ShotShell_d.3d"
 	Skin 0 "Shell_Dragon_Used.png"
 	Scale 0.15 0.15 0.15
-	ZOffset 1
 	USEACTORPITCH
 	USEACTORROLL
 
 	FrameIndex XZW1 A 0 0
+	ZOffset 1
+	FrameIndex XZW1 B 0 0
 }
 Model "BlueShellCasing"
 {
@@ -44,11 +47,12 @@ Model "BlueShellCasing"
 	Model 0 "ShotShell_d.3d"
 	Skin 0 "Shell_Kinylum_Used.png"
 	Scale 0.15 0.15 0.15
-	ZOffset 1
 	USEACTORPITCH
 	USEACTORROLL
 
 	FrameIndex XZW1 A 0 0
+	ZOffset 1
+	FrameIndex XZW1 B 0 0
 }
 Model "BlackShellCasing"
 {
@@ -57,11 +61,12 @@ Model "BlackShellCasing"
 	Model 0 "ShotShell_d.3d"
 	Skin 0 "Shell_Fuck_Used.png"
 	Scale 0.15 0.15 0.15
-	ZOffset 1
 	USEACTORPITCH
 	USEACTORROLL
 
 	FrameIndex XZW1 A 0 0
+	ZOffset 1
+	FrameIndex XZW1 B 0 0
 }
 Model "PurpleShellCasing"
 {
@@ -70,11 +75,12 @@ Model "PurpleShellCasing"
 	Model 0 "ShotShell_d.3d"
 	Skin 0 "Shell_Ball_Used.png"
 	Scale 0.15 0.15 0.15
-	ZOffset 1
 	USEACTORPITCH
 	USEACTORROLL
 
 	FrameIndex XZW1 A 0 0
+	ZOffset 1
+	FrameIndex XZW1 B 0 0
 }
 Model "GoldShellCasing"
 {
@@ -83,11 +89,12 @@ Model "GoldShellCasing"
 	Model 0 "ShotShell_d.3d"
 	Skin 0 "Shell_Gold_Used.png"
 	Scale 0.15 0.15 0.15
-	ZOffset 1
 	USEACTORPITCH
 	USEACTORROLL
 
 	FrameIndex XZW1 A 0 0
+	ZOffset 1
+	FrameIndex XZW1 B 0 0
 }
 
 Model "SaltBeam"

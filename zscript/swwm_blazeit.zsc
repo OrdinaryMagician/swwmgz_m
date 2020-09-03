@@ -238,7 +238,7 @@ Class HellblazerMissile : Actor
 		while ( bt.Next() )
 		{
 			let t = bt.Thing;
-			if ( !t || !t.bSHOOTABLE || (!t.bISMONSTER && !(t is 'BossBrain')) || (t.Health <= 0) || (target && t.IsFriend(target)) || !SWWMUtility.SphereIntersect(t,level.Vec3Offset(pos,vel),bNOGRAVITY?50:90) || !CheckSight(t,SF_IGNOREVISIBILITY|SF_IGNOREWATERBOUNDARY) ) continue;
+			if ( !t || !t.bSHOOTABLE || (!t.bISMONSTER && !(t is 'BossBrain') && !t.player) || (t.Health <= 0) || (target && t.IsFriend(target)) || !SWWMUtility.SphereIntersect(t,level.Vec3Offset(pos,vel),bNOGRAVITY?50:90) || !CheckSight(t,SF_IGNOREVISIBILITY|SF_IGNOREWATERBOUNDARY) ) continue;
 			deto++;
 			break;
 		}
@@ -251,7 +251,7 @@ Class HellblazerMissile : Actor
 		A_SetRenderStyle(1.0,STYLE_Add);
 		A_SprayDecal("BigScorch",50);
 		A_SetScale(4.5);
-		SWWMHandler.DoExplosion(self,250,320000,200,90);
+		SWWMUtility.DoExplosion(self,350,320000,200,90);
 		A_NoGravity();
 		A_QuakeEx(5,5,5,15,0,1500,"",QF_RELATIVE|QF_SCALEDOWN,falloff:500,rollIntensity:.8);
 		A_StopSound(CHAN_BODY);
@@ -347,7 +347,7 @@ Class HellblazerCrackshot : HellblazerMissile
 		A_SetRenderStyle(1.0,STYLE_Add);
 		A_SprayDecal("BigScorch",50);
 		A_SetScale(6.);
-		SWWMHandler.DoExplosion(self,300,320000,250,100);
+		SWWMUtility.DoExplosion(self,300,320000,250,100);
 		A_NoGravity();
 		A_QuakeEx(6,6,6,20,0,2000,"",QF_RELATIVE|QF_SCALEDOWN,falloff:800,rollIntensity:1.);
 		A_StopSound(CHAN_BODY);
@@ -416,7 +416,7 @@ Class HellblazerRavager : HellblazerMissile
 		A_SetRenderStyle(1.0,STYLE_Add);
 		A_SprayDecal("HugeScorch",50);
 		A_SetScale(8.);
-		SWWMHandler.DoExplosion(self,500,320000,300,120);
+		SWWMUtility.DoExplosion(self,400,320000,300,120);
 		A_NoGravity();
 		A_QuakeEx(6,6,6,30,0,2000,"",QF_RELATIVE|QF_SCALEDOWN,falloff:800,rollIntensity:1.);
 		A_StopSound(CHAN_BODY);
@@ -494,7 +494,7 @@ Class HellblazerWarhead : HellblazerMissile
 		A_SetRenderStyle(1.0,STYLE_Add);
 		A_SprayDecal("WumboScorch",150);
 		A_SetScale(7.);
-		SWWMHandler.DoExplosion(self,2000,600000,400,200);
+		SWWMUtility.DoExplosion(self,2000,600000,400,200);
 		A_NoGravity();
 		A_QuakeEx(9,9,9,150,0,12000,"",QF_RELATIVE|QF_SCALEDOWN,falloff:4000,rollIntensity:2.);
 		A_StopSound(CHAN_BODY);
@@ -534,7 +534,7 @@ Class HellblazerWarhead : HellblazerMissile
 	void A_WarheadSub()
 	{
 		if ( special1 < 40 )
-			SWWMHandler.DoExplosion(self,320-special1*8,600000-special1*12000,200+special1*30);
+			SWWMUtility.DoExplosion(self,320-special1*8,600000-special1*12000,200+special1*30);
 		special1++;
 		if ( (special1 <= 30) && !(special1%2) )
 		{
@@ -769,7 +769,7 @@ Class HellblazerClusterMini : HellblazerMissile2
 		while ( bt.Next() )
 		{
 			let t = bt.Thing;
-			if ( !t || !t.bSHOOTABLE || (!t.bISMONSTER && !(t is 'BossBrain')) || (t.Health <= 0) || (target && t.IsFriend(target)) || !SWWMUtility.SphereIntersect(t,level.Vec3Offset(pos,vel),60) || !CheckSight(t,SF_IGNOREVISIBILITY|SF_IGNOREWATERBOUNDARY) ) continue;
+			if ( !t || !t.bSHOOTABLE || (!t.bISMONSTER && !(t is 'BossBrain') && !t.player) || (t.Health <= 0) || (target && t.IsFriend(target)) || !SWWMUtility.SphereIntersect(t,level.Vec3Offset(pos,vel),60) || !CheckSight(t,SF_IGNOREVISIBILITY|SF_IGNOREWATERBOUNDARY) ) continue;
 			deto++;
 			break;
 		}
@@ -782,7 +782,7 @@ Class HellblazerClusterMini : HellblazerMissile2
 		A_SetRenderStyle(1.0,STYLE_Add);
 		A_SprayDecal("BigScorch",50);
 		A_SetScale(2.5);
-		SWWMHandler.DoExplosion(self,80,200000,150,60);
+		SWWMUtility.DoExplosion(self,80,200000,150,60);
 		A_NoGravity();
 		A_QuakeEx(4,4,4,12,0,1000,"",QF_RELATIVE|QF_SCALEDOWN,falloff:400,rollIntensity:.6);
 		A_StopSound(CHAN_BODY);
@@ -1052,7 +1052,7 @@ Class HellblazerRavagerArm : Actor
 				l.target = p;
 			}
 			if ( !(ReactionTime%1) )
-				SWWMHandler.DoExplosion(self,4+reactiontime*2,1000+200*reactiontime,250-6*reactiontime);
+				SWWMUtility.DoExplosion(self,4+reactiontime*2,1000+200*reactiontime,250-6*reactiontime);
 			double spd = vel.length();
 			vel = (vel*.4+(FRandom[ExploS](-.2,.2),FRandom[ExploS](-.2,.2),FRandom[ExploS](-.2,.2))).unit()*spd;
 			Vector3 pvel = (FRandom[ExploS](-1,1),FRandom[ExploS](-1,1),FRandom[ExploS](-1,1)).unit()*FRandom[ExploS](1,5);
@@ -1105,6 +1105,8 @@ Class HellblazerWarheadArm : Actor
 {
 	Default
 	{
+		Obituary "$O_HELLBLAZER";
+		DamageType 'Exploded';
 		PROJECTILE;
 		+THRUACTORS;
 		+BOUNCEONWALLS;
@@ -1134,7 +1136,7 @@ Class HellblazerWarheadArm : Actor
 		{
 			A_CountDown();
 			Spawn("HellblazerWarheadTrail",pos);
-			SWWMHandler.DoExplosion(self,30+reactiontime*5,3000+500*reactiontime,120+3*reactiontime);
+			SWWMUtility.DoExplosion(self,30+reactiontime*5,3000+500*reactiontime,120+3*reactiontime);
 			Vector3 pvel = (FRandom[ExploS](-1,1),FRandom[ExploS](-1,1),FRandom[ExploS](-1,1)).unit()*FRandom[ExploS](1,5);
 			let s = Spawn("SWWMHalfSmoke",pos);
 			s.vel = pvel+vel*.2;
@@ -1257,7 +1259,7 @@ Class Hellblazer : SWWMWeapon
 		Vector3 x, y, z, x2, y2, z2, dir, origin;
 		double a, s;
 		[x, y, z] = swwm_CoordUtil.GetAxes(pitch,angle,roll);
-		SWWMHandler.DoKnockback(self,-x,bAlt?22000.:32000.);
+		SWWMUtility.DoKnockback(self,-x,bAlt?22000.:32000.);
 		[x2, y2, z2] = swwm_CoordUtil.GetAxes(BulletSlope(),angle,roll);
 		origin = level.Vec3Offset(Vec2OffsetZ(0,0,player.viewz),10*x+3*y-5*z);
 		a = FRandom[Hellblazer](0,360);

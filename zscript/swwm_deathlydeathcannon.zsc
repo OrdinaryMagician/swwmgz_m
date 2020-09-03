@@ -25,8 +25,6 @@ Class PlayerGone : PlayerChunk
 		}
 		else if ( (player.cmd.buttons&BT_USE) && (deadtimer > 120) )
 		{
-			// gross hackfix for library "vanishing"
-			SWWMExcuseMeWhatTheFuckHandler.ThisIsSomeSeriousBullshit();
 			// reload save
 			player.cls = null;
 			player.playerstate = PST_ENTER;
@@ -331,10 +329,15 @@ Class YnykronImpact : Actor
 			if ( tracer && (tracer.Health <= 0) )
 			{
 				if ( tracer.player ) PlayerGone.FeckOff(tracer);
-				// poof away
-				tracer.bINVISIBLE = true;
-				tracer.A_ChangeLinkFlags(false);	// remove from blockmap, should guarantee archviles not raising this
-				IDontFeelSoGood.DeletThis(tracer);	// ensures corpse is deleted too
+				if ( tracer.FindState("YnykronDeath",true) )
+					tracer.SetStateLabel("YnykronDeath");	// dedicated state
+				else
+				{
+					// poof away manually
+					tracer.bINVISIBLE = true;
+					tracer.A_ChangeLinkFlags(false);	// remove from blockmap, should guarantee archviles not raising this
+					IDontFeelSoGood.DeletThis(tracer);	// ensures corpse is deleted too
+				}
 			}
 		}
 		if ( YnykronShot(master) )
@@ -1025,6 +1028,409 @@ Class YnykronAltTracer : LineTracer
 	}
 }
 
+Class YnykronHalo : Actor
+{
+	Default
+	{
+		RenderStyle "Add";
+		+NOGRAVITY;
+		+DONTSPLASH;
+		+NOTELEPORT;
+		+NOBLOCKMAP;
+		+NOINTERACTION;
+		+FORCEXYBILLBOARD;
+		Radius .1;
+		Height 0.;
+		Scale 1.5;
+	}
+	override void Tick()
+	{
+		if ( isFrozen() ) return;
+		if ( !target )
+		{
+			Destroy();
+			return;
+		}
+		SetOrigin(target.pos,true);
+		Scale = 1.5*target.Scale;
+	}
+	States
+	{
+	Spawn:
+		MHAL A -1 Bright;
+		Stop;
+	}
+}
+
+Class GatherDust : Actor
+{
+	override void Tick()
+	{
+		if ( isFrozen() ) return;
+		SetOrigin(level.Vec3Offset(pos,vel),true);
+		if ( !CheckNoDelay() || (tics == -1) ) return;
+		if ( tics > 0 ) tics--;
+		while ( !tics )
+		{
+			if ( !SetState(CurState.NextState) )
+				return;
+		}
+	}
+
+	override void PostBeginPlay()
+	{
+		SetState(FindState("Spawn")+Random[ExploS](0,19));
+		Scale *= FRandom[ExploS](.8,1.2);
+		Scale.x *= RandomPick[ExploS](-1,1);
+		Scale.y *= RandomPick[ExploS](-1,1);
+	}
+
+	void A_Gravitate()
+	{
+		if ( target )
+		{
+			if ( alpha < .02 ) A_FadeIn(.001);
+			Vector3 dirto = level.Vec3Diff(pos,target.pos);
+			double distto = dirto.length();
+			if ( distto < (32.*target.scale.x) )
+			{
+				// sucked in
+				target.specialf1 += .00001;
+				Destroy();
+				return;
+			}
+			dirto /= distto;
+			vel = dirto*8.*(clamp((1200.-distto)/1200.,0.,1.)**3.);
+		}
+		else
+		{
+			vel *= .98;
+			A_FadeOut(.001);
+		}
+	}
+
+	Default
+	{
+		RenderStyle "Shaded";
+		StencilColor "White";
+		Radius .1;
+		Height 0.;
+		Alpha .001;
+		Scale 2.;
+		+NOGRAVITY;
+		+NOBLOCKMAP;
+		+DONTSPLASH;
+		+NOTELEPORT;
+		+NOINTERACTION;
+		+FORCEXYBILLBOARD;
+		+NOCLIP;
+	}
+	States
+	{
+	Spawn:
+		DUST ABCDEFGHIJKLMNOPQRST 1 A_Gravitate();
+		Wait;
+	}
+}
+
+Class YnykronVoidBeam : Actor
+{
+	Actor basebeam, prevbeam, nextbeam;
+	YnykronTracer t;
+	double baseang, basept;
+
+	Default
+	{
+		RenderStyle "Add";
+		Radius .1;
+		Height 0.;
+		+NOGRAVITY;
+		+NOBLOCKMAP;
+		+DONTSPLASH;
+		+NOTELEPORT;
+		+NOINTERACTION;
+		+INTERPOLATEANGLES;
+	}
+
+	override void PostBeginPlay()
+	{
+		angle = baseang = FRandom[Ynykron](0,360);
+		pitch = basept = FRandom[Ynykron](-90,90);
+		Args[0] = RandomPick[Ynykron](-1,1);
+		Args[1] = RandomPick[Ynykron](-1,1);
+		Args[2] = Random[Ynykron](40,80);
+		Scale *= FRandom[Ynykron](.5,1.5);
+		Alpha = .01;
+		Special2 = -1;
+	}
+
+	void A_UpdateBeam()
+	{
+		if ( !master )
+		{
+			Destroy();
+			return;
+		}
+		if ( basebeam == self )
+		{
+			baseang += FRandom[Ynykron](0.,2.)*Args[0];
+			basept += FRandom[Ynykron](0.,2.)*Args[1];
+			Vector3 ofs = master.scale.x*32.*(cos(baseang)*cos(basept),sin(baseang)*cos(basept),-sin(basept));
+			SetOrigin(level.Vec3Offset(master.pos,ofs),true);
+			double da = deltaangle(angle,baseang+FRandom[Ynykron](-5,5)),
+				dp = deltaangle(pitch,basept+FRandom[Ynykron](-5,5));
+			angle += da*.2;
+			pitch += dp*.2;
+			// seek a target
+			double closest = double.infinity;
+			let bt = BlockThingsIterator.Create(self,8000);
+			Vector3 dir = swwm_CoordUtil.GetAxes(pitch,angle,0);
+			tracer = null;
+			while ( bt.Next() )
+			{
+				let a = bt.Thing;
+				double dist;
+				if ( !a || !a.bSHOOTABLE || (!a.bISMONSTER && !(a is 'BossBrain') && !a.player) || (a.Health <= 0) || ((dist=Distance3D(a)) > 8000) || !CheckSight(a,SF_IGNOREVISIBILITY|SF_IGNOREWATERBOUNDARY) ) continue;
+				if ( dist > closest ) continue;
+				Vector3 dirto = level.Vec3Diff(pos,a.Vec3Offset(0,0,a.height/2));
+				if ( dir dot dirto < .2 ) continue;
+				closest = dist;
+				tracer = a;
+			}
+			if ( special2 == -1 )
+			{
+				A_FadeIn(FRandom[Ynykron](.003,.03));
+				if ( Alpha >= .2 )
+				{
+					Alpha = .2;
+					special2 = 0;
+				}
+			}
+			else if ( special2 == -2 ) A_FadeOut(FRandom[Ynykron](.003,.03));
+			else
+			{
+				special2++;
+				if ( special2 > 30 ) special2 = -2;
+			}
+			// check total length
+			int cnt = 0;
+			for ( YnykronVoidBeam b=self; b; b=YnykronVoidBeam(b.nextbeam) ) cnt++;
+			Args[4] = cnt;
+		}
+		else if ( !prevbeam )
+		{
+			Destroy();
+			return;
+		}
+		Vector3 x = swwm_CoordUtil.GetAxes(pitch,angle,0);
+		if ( !t ) t = new("YnykronTracer");
+		t.ShootThroughList.Clear();
+		t.WaterHitList.Clear();
+		t.HitList.Clear();
+		t.Trace(pos,cursector,x,16*scale.x,TRACE_HitSky);
+		for ( int i=0; i<t.ShootThroughList.Size(); i++ )
+		{
+			t.ShootThroughList[i].Activate(target,0,SPAC_PCross);
+			if ( t.ShootThroughList[i].special == GlassBreak )	// fuck glass
+				t.ShootThroughList[i].Activate(target,0,SPAC_Impact);
+		}
+		for ( int i=0; i<t.HitList.Size(); i++ )
+		{
+			// TODO pull in actors we hit
+		}
+		Args[3]++;
+		if ( (t.Results.HitType != TRACE_HitNone) || (special1 > Args[2]) || (Args[3] < 3) )
+		{
+			// end of the line
+			if ( nextbeam ) nextbeam.Destroy();
+			if ( basebeam == self ) frame = 3;
+			else frame = 2;
+		}
+		else
+		{
+			if ( basebeam == self ) frame = 0;
+			else frame = 1;
+			// spawn (or relocate) next beam
+			if ( !nextbeam )
+			{
+				nextbeam = Spawn("YnykronVoidBeam",level.Vec3Offset(pos,x*16*scale.x));
+				nextbeam.angle = atan2(t.Results.HitVector.y,t.Results.HitVector.x);
+				nextbeam.pitch = asin(-t.Results.HitVector.z);
+			}
+			else nextbeam.SetOrigin(level.Vec3Offset(pos,x*16*scale.x),true);
+			nextbeam.target = target;
+			nextbeam.master = master;
+			nextbeam.tracer = tracer;
+			YnykronVoidBeam(nextbeam).basebeam = basebeam;
+			YnykronVoidBeam(nextbeam).prevbeam = self;
+			nextbeam.Args[2] = Args[2];
+			nextbeam.special1 = special1+1;
+			// somehow this can happen???????
+			if ( basebeam ) nextbeam.alpha = alpha*(1.-(special1/double(basebeam.Args[4])));
+			else nextbeam.alpha = alpha;
+			nextbeam.scale = scale;
+			nextbeam.frame = 1;
+			Vector3 newdir = t.Results.HitVector;
+			newdir = (newdir+.4*(FRandom[Ynykron](-1,1),FRandom[Ynykron](-1,1),FRandom[Ynykron](-1,1))).unit();
+			if ( tracer && (tracer.Health > 0) )
+			{
+				Vector3 dirto = level.Vec3Diff(nextbeam.pos,tracer.Vec3Offset(0,0,tracer.Height/2));
+				dirto /= dirto.length();
+				newdir = (newdir+dirto*FRandom[Ynykron](0.,.3)).unit();
+			}
+			double da = deltaangle(nextbeam.angle,atan2(newdir.y,newdir.x)),
+				dp = deltaangle(nextbeam.pitch,asin(-newdir.z));
+			nextbeam.angle += da*.2;
+			nextbeam.pitch += dp*.2;
+		}
+	}
+
+	override void Tick()
+	{
+		if ( isFrozen() ) return;
+		if ( !CheckNoDelay() || (tics == -1) ) return;
+		if ( tics > 0 ) tics--;
+		while ( !tics )
+		{
+			if ( !SetState(CurState.NextState) )
+				return;
+		}
+	}
+
+	States
+	{
+	Spawn:
+		XZW1 # 1 A_UpdateBeam();
+		Wait;
+	}
+}
+
+Class YnykronSingularity : Actor
+{
+	Actor beamers[16];
+
+	override void PostBeginPlay()
+	{
+		let g = Spawn("YnykronHalo",pos);
+		g.target = self;
+		A_StartSound("ynykron/vortex",CHAN_BODY,CHANF_LOOP,1.,1.5);
+		specialf1 = scale.x;
+	}
+
+	// lightweight tick, we don't need anything else other than states
+	override void Tick()
+	{
+		if ( isFrozen() ) return;
+		SetOrigin(level.Vec3Offset(pos,vel),true);
+		if ( !CheckNoDelay() || (tics == -1) ) return;
+		if ( tics > 0 ) tics--;
+		while ( !tics )
+		{
+			if ( !SetState(CurState.NextState) )
+				return;
+		}
+	}
+
+	void A_SingularityTick()
+	{
+		// gather dust particles (very minor "background" mass gain)
+		for ( int i=0; i<8; i++ )
+		{
+			double ang = FRandom[ExploS](0,360);
+			double pt = FRandom[ExploS](-90,90);
+			FLineTraceData d;
+			double dst = FRandom[ExploS](800,1200);
+			LineTrace(ang,dst*scale.x,pt,TRF_THRUACTORS|TRF_THRUHITSCAN,data:d);
+			Vector3 norm;
+			if ( d.HitType == TRACE_HitWall )
+			{
+				norm = (d.HitLine.delta.y,-d.HitLine.delta.x,0).unit();
+				if ( d.LineSide ) norm *= -1;
+			}
+			else if ( d.HitType == TRACE_HitFloor )
+			{
+				if ( d.Hit3DFloor ) norm = -d.Hit3DFloor.top.Normal;
+				else norm = d.HitSector.floorplane.Normal;
+			}
+			else if ( d.HitType == TRACE_HitCeiling )
+			{
+				if ( d.Hit3DFloor ) norm = -d.Hit3DFloor.bottom.Normal;
+				else norm = d.HitSector.ceilingplane.Normal;
+			}
+			else norm = (0,0,0);
+			let gd = Spawn("GatherDust",level.Vec3Offset(d.HitLocation,norm*8));
+			gd.target = self;
+		}
+		// TODO storm clouds
+		// TODO lightning
+		// ol' crazy purple beams from original
+		for ( int i=0; i<16; i++ )
+		{
+			if ( beamers[i] || Random[Ynykron](0,40) ) continue;
+			beamers[i] = Spawn("YnykronVoidBeam",pos);
+			YnykronVoidBeam(beamers[i]).basebeam = beamers[i];
+			beamers[i].target = target;
+			beamers[i].master = self;
+		}
+		// TODO suck in reachable targets (w/ radiation dmg)
+		// TODO accrue mass (w/ extra gravity damage)
+		// push away from nearby geometry
+		for ( int i=0; i<8; i++ )
+		{
+			double ang = FRandom[ExploS](0,360);
+			double pt = FRandom[ExploS](-90,90);
+			FLineTraceData d;
+			if ( !LineTrace(ang,80*scale.x,pt,TRF_THRUACTORS|TRF_THRUHITSCAN,data:d) ) continue;
+			double mag = (80.*scale.x)-d.Distance;
+			vel -= (cos(ang)*cos(pt),sin(ang)*cos(pt),-sin(pt))*.02*mag;
+		}
+		double magvel = vel.length();
+		Vector3 dir;
+		if ( magvel <= double.epsilon ) dir = (cos(angle)*cos(pitch),sin(angle)+cos(pitch),-sin(pitch));
+		else dir = vel/magvel;
+		// wander
+		dir = (dir+(FRandom[Ynykron](-1,1),FRandom[Ynykron](-1,1),FRandom[Ynykron](-1,1))*FRandom[Ynykron](.05,.1)).unit();
+		magvel *= .93;
+		if ( magvel > 5. ) magvel = 5.;
+		if ( magvel < .1 ) magvel = .1;
+		vel = magvel*dir;
+		// shift to target scale
+		// hopefully this supports interpolation someday
+		double diffscale = specialf1-scale.x;
+		if ( abs(diffscale) <= .01 ) A_SetScale(specialf1);
+		else A_SetScale(scale.x+diffscale*.3);
+	}
+
+	void A_SingularityBlast()
+	{
+	}
+	void A_SingularityExtraBlast()
+	{
+	}
+
+	Default
+	{
+		+NOGRAVITY;
+		+DONTSPLASH;
+		+NOTELEPORT;
+		+NOBLOCKMAP;
+		+NOINTERACTION;
+		Radius .1;
+		Height 0.;
+		Scale .2;
+	}
+	States
+	{
+	Spawn:
+		XZW1 A 1 A_SingularityTick();
+		Wait;
+	Death:
+		TNT1 A 0 A_SingularityBlast();
+		TNT1 A 1 A_SingularityExtraBlast();
+		Wait;
+	}
+}
+
 Class YnykronAltBeam : Actor
 {
 	bool nospread;
@@ -1051,7 +1457,7 @@ Class YnykronAltBeam : Actor
 		}
 		for ( int i=0; i<t.Results.Distance; i+=32 )
 		{
-			if ( Random[Ynykron](0,5) ) continue;
+			if ( Random[Ynykron](0,2) ) continue;
 			let b = Spawn("SWWMHalfSmoke",level.Vec3Offset(pos,x*i));
 			b.Scale *= FRandom[Ynykron](1.6,2.8);
 			b.special1 = Random[Ynykron](3,5);
@@ -1084,17 +1490,17 @@ Class YnykronAltBeam : Actor
 				if ( t.Results.ffloor ) norm = -t.Results.ffloor.bottom.Normal;
 				else norm = t.Results.HitSector.ceilingplane.Normal;
 			}
-			/*let b = Spawn("YnykronSingularity",level.Vec3Offset(t.Results.HitPos,norm*16));
+			let b = Spawn("YnykronSingularity",level.Vec3Offset(t.Results.HitPos,norm*16));
 			b.target = target;
 			b.angle = atan2(norm.y,norm.x);
-			b.pitch = asin(-norm.z);*/
+			b.pitch = asin(-norm.z);
 			nospread = true;
 			return;
 		}
 		if ( special1 >= 25600 )
 		{
 			// end of the line, dissipate
-			int numpt = Random[Ynykron](4,8);
+			int numpt = Random[Ynykron](16,24);
 			for ( int i=0; i<numpt; i++ )
 			{
 				let b = Spawn("SWWMSmoke",level.Vec3Offset(pos,x*128));
@@ -1132,7 +1538,7 @@ Class YnykronAltBeam : Actor
 		if ( isFrozen() ) return;
 		A_FadeOut(FRandom[Ynykron](.01,.02));
 		special2++;
-		if ( special2 == 1 )
+		if ( special2 == 2 )
 			SpreadOut();
 		if ( !CheckNoDelay() || (tics == -1) ) return;
 		if ( tics > 0 ) tics--;

@@ -230,6 +230,22 @@ Class MagAmmo : Inventory abstract
 			return;
 		}
 		if ( countdown-- > 0 ) return;
+		MagFill();
+	}
+
+	bool MagFill()
+	{
+		// double-check that parent ammo exists
+		if ( !pamo )
+		{
+			pamo = Ammo(Owner.FindInventory(ParentAmmo));
+			if ( !pamo )
+			{
+				pamo = Ammo(Spawn(ParentAmmo));
+				pamo.AttachToOwner(Owner);
+				pamo.Amount = 0;
+			}
+		}
 		bool given = false;
 		while ( (pamo.Amount < pamo.MaxAmount) && (Amount >= ClipSize) )
 		{
@@ -240,6 +256,7 @@ Class MagAmmo : Inventory abstract
 				pamo.PrintPickupMessage(true,pamo.PickupMessage());
 		}
 		if ( given ) pamo.PlayPickupSound(Owner);
+		return given;
 	}
 
 	override inventory CreateTossable( int amt )
@@ -701,6 +718,28 @@ Class EvisceratorSixPack : EvisceratorShell
 	}
 }
 
+Class EvisceratorTrioSpawn : Actor
+{
+	override void PostBeginPlay()
+	{
+		if ( bCOUNTSECRET ) level.total_secrets--;
+		for ( int i=0; i<3; i++ )
+		{
+			let a = Spawn("EvisceratorShell",Vec3Angle(12,i*120));
+			a.special = special;
+			a.angle = i*120;
+			a.FloatBobPhase = FloatBobPhase;
+			for ( int j=0; j<5; j++ ) a.args[j] = args[j];
+			if ( bCOUNTSECRET )
+			{
+				a.bCOUNTSECRET = true;
+				level.total_secrets++;
+			}
+		}
+		Destroy();
+	}
+}
+
 // ============================================================================
 // Hellblazer ammo
 // ============================================================================
@@ -741,6 +780,27 @@ Class HellblazerMissileMag : HellblazerMissiles
 	{
 		Inventory.PickupMessage "$T_HELLMISSILEMAG";
 		Inventory.Amount 6;
+	}
+}
+Class HellblazerMissileTrioSpawn : Actor
+{
+	override void PostBeginPlay()
+	{
+		if ( bCOUNTSECRET ) level.total_secrets--;
+		for ( int i=0; i<3; i++ )
+		{
+			let a = Spawn("HellblazerMissiles",Vec3Angle(8,i*120));
+			a.special = special;
+			a.angle = i*120;
+			a.FloatBobPhase = FloatBobPhase;
+			for ( int j=0; j<5; j++ ) a.args[j] = args[j];
+			if ( bCOUNTSECRET )
+			{
+				a.bCOUNTSECRET = true;
+				level.total_secrets++;
+			}
+		}
+		Destroy();
 	}
 }
 
@@ -876,7 +936,7 @@ Class SparkUnit : Ammo
 		Stamina 50000;
 		Inventory.Icon "graphics/HUD/Icons/A_Sparkster.png";
 		Inventory.Amount 1;
-		Inventory.MaxAmount 4;
+		Inventory.MaxAmount 8;
 		Ammo.BackpackAmount 1;
 		Ammo.DropAmount 1;
 		+FLOATBOB;
@@ -991,6 +1051,51 @@ Class SilverBullets2 : MagAmmo
 	}
 }
 
+Class SilverBulletsBundleSpawn : Actor
+{
+	override void PostBeginPlay()
+	{
+		if ( bCOUNTSECRET ) level.total_secrets--;
+		int bnd = Random[Bundle](2,3);
+		for ( int i=0; i<3; i++ )
+		{
+			let a = Spawn("SilverBullets",Vec3Angle(6,i*(360/bnd)));
+			a.special = special;
+			a.angle = i*(360/bnd);
+			a.FloatBobPhase = FloatBobPhase;
+			for ( int j=0; j<5; j++ ) a.args[j] = args[j];
+			if ( bCOUNTSECRET )
+			{
+				a.bCOUNTSECRET = true;
+				level.total_secrets++;
+			}
+		}
+		Destroy();
+	}
+}
+Class SilverBullets2BundleSpawn : Actor
+{
+	override void PostBeginPlay()
+	{
+		if ( bCOUNTSECRET ) level.total_secrets--;
+		int bnd = Random[Bundle](2,3);
+		for ( int i=0; i<bnd; i++ )
+		{
+			let a = Spawn("SilverBullets2",Vec3Angle(6,i*(360/bnd)));
+			a.special = special;
+			a.angle = i*(360/bnd);
+			a.FloatBobPhase = FloatBobPhase;
+			for ( int j=0; j<5; j++ ) a.args[j] = args[j];
+			if ( bCOUNTSECRET )
+			{
+				a.bCOUNTSECRET = true;
+				level.total_secrets++;
+			}
+		}
+		Destroy();
+	}
+}
+
 // ============================================================================
 // Candygun ammo
 // ============================================================================
@@ -1041,6 +1146,28 @@ Class CandyGunBullets : MagAmmo
 	Spawn:
 		XZW1 A -1;
 		Stop;
+	}
+}
+
+Class CandyGunBulletsBundleSpawn : Actor
+{
+	override void PostBeginPlay()
+	{
+		if ( bCOUNTSECRET ) level.total_secrets--;
+		int bnd = Random[Bundle](2,3);
+		for ( int i=0; i<bnd; i++ )
+		{
+			let a = Spawn("CandyGunBullets",Vec3Angle(4,i*(360/bnd)));
+			a.special = special;
+			a.angle = i*(360/bnd);
+			for ( int j=0; j<5; j++ ) a.args[j] = args[j];
+			if ( bCOUNTSECRET )
+			{
+				a.bCOUNTSECRET = true;
+				level.total_secrets++;
+			}
+		}
+		Destroy();
 	}
 }
 

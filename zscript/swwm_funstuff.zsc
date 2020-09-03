@@ -330,6 +330,76 @@ Class KirinManga : SWWMCollectable
 }
 */
 
+// yay!
+Class FancyConfetti : Actor
+{
+	int deadtimer;
+	double anglevel, pitchvel, rollvel;
+
+	Default
+	{
+		Radius 2;
+		Height 2;
+		+NOBLOCKMAP;
+		+DROPOFF;
+		+MOVEWITHSECTOR;
+		+THRUACTORS;
+		+NOTELEPORT;
+		+DONTSPLASH;
+		+INTERPOLATEANGLES;
+		+ROLLSPRITE;
+		+ROLLCENTER;
+		+SLIDESONWALLS;
+		Gravity 0.05;
+	}
+	override void PostBeginPlay()
+	{
+		Super.PostBeginPlay();
+		deadtimer = Random[Junk](-30,30);
+		anglevel = FRandom[Junk](3,12)*RandomPick[Junk](-1,1);
+		pitchvel = FRandom[Junk](3,12)*RandomPick[Junk](-1,1);
+		rollvel = FRandom[Junk](3,12)*RandomPick[Junk](-1,1);
+		if ( bAMBUSH ) frame = 0;
+		else frame = Random[Junk](0,9);
+		scale *= Frandom[Junk](0.8,1.2);
+	}
+	override void Tick()
+	{
+		Super.Tick();
+		if ( isFrozen() ) return;
+		vel.xy *= 0.98;
+		if ( vel.z > 0 ) vel.z *= 0.98;
+		if ( CurState == ResolveState("Death") )
+		{
+			deadtimer++;
+			if ( deadtimer > 300 ) A_FadeOut(0.05);
+			return;
+		}
+	}
+	States
+	{
+	Spawn:
+		XZW1 # 1
+		{
+			angle += anglevel;
+			pitch += pitchvel;
+			roll += rollvel;
+			return A_JumpIf(pos.z<=floorz,"Death");
+		}
+		Loop;
+	Death:
+		XZW1 # -1
+		{
+			A_Stop();
+			pitch = roll = 0;
+		}
+		Stop;
+	Dummy:
+		XZW1 ABCDEFGHIJ -1;
+		Stop;
+	}
+}
+
 // Collectable box (recycling of discarded "chance box" item)
 Class Chancebox : Actor
 {
@@ -389,7 +459,7 @@ Class Chancebox : Actor
 	{
 		A_StartSound("misc/tada",CHAN_ITEM);
 		double ang, pt;
-		int numpt = Random[ExploS](64,128);
+		int numpt = Random[ExploS](100,120);
 		for ( int i=0; i<numpt; i++ )
 		{
 			ang = FRandom[ExploS](0,360);
@@ -410,6 +480,8 @@ Class Chancebox : Actor
 		Height 32;
 		+MOVEWITHSECTOR;
 		+ROLLSPRITE;
+		+SOLID;
+		Species "Chancebox";
 	}
 	States
 	{
@@ -460,7 +532,9 @@ Class ChanceboxTop : Actor
 	{
 		Radius 16;
 		Height 4;
+		Species "Chancebox";
 		PROJECTILE;
+		+THRUSPECIES;
 	}
 	override void PostBeginPlay()
 	{
@@ -493,7 +567,9 @@ Class ChanceboxSide : Actor
 	{
 		Radius 16;
 		Height 32;
+		Species "Chancebox";
 		PROJECTILE;
+		+THRUSPECIES;
 	}
 	override void PostBeginPlay()
 	{
